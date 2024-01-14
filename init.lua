@@ -10,10 +10,8 @@ if not vim.loop.fs_stat(lazypath) then
   })
 end
 vim.opt.rtp:prepend(lazypath)
-
 require("vim-options")
-require("base")
-require("lazy").setup("plugins")
+--require("base")
 
-require('highlights')
+require("lazy").setup("plugins")
 require('maps')
