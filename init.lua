@@ -11,7 +11,7 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 require("vim-options")
---require("base")
 
 require("lazy").setup("plugins")
-require('maps')
+--require("maps")
+--require("base")

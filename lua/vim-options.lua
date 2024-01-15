@@ -4,6 +4,15 @@ vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
 vim.cmd("set modifiable")  -- Enable modifiability
 vim.g.mapleader = " "
+-- Enable clipboard support
+vim.cmd[[set clipboard=unnamedplus]]
+
+-- Ensure that '+clipboard' is available (requires Neovim to be compiled with clipboard support)
+if vim.fn.has('clipboard') == 1 then
+  -- Use system clipboard for all operations
+  vim.cmd[[set clipboard=unnamedplus]]
+end
+
 
 -- Navigate vim panes better
 vim.keymap.set('n', '<c-k>', ':wincmd k<CR>')
