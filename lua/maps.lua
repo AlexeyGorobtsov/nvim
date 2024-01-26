@@ -37,4 +37,4 @@ keymap.set("n", "<C-w><down>", "<C-w>-")
 
 -- NeoTree
 --keymap.set("n", "<leader>e", ":Neotree focus<CR>")
-keymap.set('n', '<space>n', ':Neotree<CR>', opts)
+--keymap.set('n', '<space>n', ':Neotree<CR>', opts)
