@@ -10,3 +10,8 @@ return {
 		end,
 	},
 }
+
+--git config --global user.name "User"
+--git config --global user.email "user@gmail.com"
+--cat .git/config
+--git config --list 
