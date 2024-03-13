@@ -22,3 +22,8 @@ vim.keymap.set("n", "<c-l>", ":wincmd l<CR>")
 vim.keymap.set("n", "<leader>h", ":nohlsearch<CR>")
 vim.keymap.set("n", "<leader>tn", ":tabnext<CR>")
 vim.wo.number = true
+-- Включает проверку правописания
+vim.opt.spell = true
+
+-- Установка языка проверки правописания на английский и любой другой по вашему выбору
+vim.opt.spelllang = {"en_us", "ru_ru"}

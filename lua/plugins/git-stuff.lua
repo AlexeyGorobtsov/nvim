@@ -14,4 +14,7 @@ return {
 --git config --global user.name "User"
 --git config --global user.email "user@gmail.com"
 --cat .git/config
---git config --list 
+--git config --list
+--git config -h // выводит опции и короткое описание
+--git show // выводит информацию по коммиту
+--git reset HEAD .idea // убрать все файлы папки .idea
