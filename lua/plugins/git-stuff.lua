@@ -18,3 +18,8 @@ return {
 --git config -h // выводит опции и короткое описание
 --git show // выводит информацию по коммиту
 --git reset HEAD .idea // убрать все файлы папки .idea
+-- git commit - m, git add -a //  работает только для проиндексированных файлов
+-- git config --global alias.commitall '!git add .; git commit' алиас для сохранения текущей директории
+-- git rm -r src = rm -r src + git add src
+-- git rm -r --cashed src // untracked dir src (отсутствует в index)
+-- git mv index.html hello.html // переименовал файл index.html и добавил в рабочую директорию index
