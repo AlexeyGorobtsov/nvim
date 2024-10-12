@@ -10,8 +10,8 @@ vim.cmd([[set clipboard=unnamedplus]])
 
 -- Ensure that '+clipboard' is available (requires Neovim to be compiled with clipboard support)
 if vim.fn.has("clipboard") == 1 then
-    -- Use system clipboard for all operations
-    vim.cmd([[set clipboard=unnamedplus]])
+	-- Use system clipboard for all operations
+	vim.cmd([[set clipboard=unnamedplus]])
 end
 
 -- Navigate vim panes better
@@ -29,3 +29,4 @@ vim.opt.spell = true
 
 -- Установка языка проверки правописания на английский и любой другой по вашему выбору
 vim.opt.spelllang = { "en_us", "ru_ru" }
+vim.o.termguicolors = true

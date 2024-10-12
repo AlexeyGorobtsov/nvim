@@ -14,6 +14,7 @@ return {
 	{
 		"neovim/nvim-lspconfig",
 		lazy = false,
+		event = { "BufReadPre", "BufNewFile" },
 		config = function()
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 			local lspconfig = require("lspconfig")
@@ -74,25 +75,17 @@ return {
 				end,
 			})
 
-			-- Diagnostic configuration
-			-- vim.diagnostic.config({
-			-- 	virtual_text = true,
-			-- 	signs = true,
-			-- 	underline = true,
-			-- 	update_in_insert = false,
-			-- 	severity_sort = false,
-			-- })
-
 			-- Set up global keybindings
 			vim.keymap.set("n", "K", vim.lsp.buf.hover, {})
 			vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, {})
 			vim.keymap.set("n", "<leader>gr", vim.lsp.buf.references, {})
 			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, {})
 
-			-- LSP logging configuration
-			-- vim.lsp.set_log_level("debug")
-			-- require("vim.lsp.log").set_format_func(vim.inspect)
-			--
+			-- Custom command to Lsp stop Groovy
+			vim.api.nvim_create_user_command("StopGroovyLSP", function()
+				vim.cmd("LspStop groovyls")
+			end, {})
+
 			-- Custom command to restart Groovy LSP
 			vim.api.nvim_create_user_command("RestartGroovyLSP", function()
 				vim.cmd("LspStop groovyls")
