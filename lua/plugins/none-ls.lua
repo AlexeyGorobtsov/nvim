@@ -1,7 +1,7 @@
 return {
 	{
 		"stevearc/conform.nvim",
-		event = "BufWritePre", -- Загружаем только перед сохранением
+		event = "BufWritePre",
 		opts = {
 			formatters_by_ft = {
 				lua = { "stylua" },
@@ -14,9 +14,10 @@ return {
 				json = { "prettier" },
 				yaml = { "prettier" },
 				markdown = { "prettier" },
+				groovy = { "npm-groovy-lint" },
 			},
 			format_on_save = {
-				timeout_ms = 3000, -- Уменьшенный таймаут
+				timeout_ms = 3000,
 				lsp_fallback = true,
 			},
 		},
@@ -25,7 +26,7 @@ return {
 			vim.keymap.set({ "n", "v" }, "<leader>gf", function()
 				require("conform").format({
 					lsp_fallback = true,
-					async = true, -- Асинхронное форматирование
+					async = true,
 					timeout_ms = 3000,
 				})
 			end, { desc = "Format file or range (in visual mode)" })
@@ -33,7 +34,7 @@ return {
 	},
 	{
 		"mfussenegger/nvim-lint",
-		event = "BufWritePost", -- Линтинг только после сохранения
+		event = "BufWritePost",
 		config = function()
 			local lint = require("lint")
 			lint.linters_by_ft = {
@@ -41,6 +42,7 @@ return {
 				typescript = { "eslint" },
 				javascriptreact = { "eslint" },
 				typescriptreact = { "eslint" },
+				groovy = { "npm-groovy-lint" },
 			}
 
 			vim.api.nvim_create_autocmd("BufWritePost", {
