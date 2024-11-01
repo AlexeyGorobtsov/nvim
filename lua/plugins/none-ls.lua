@@ -20,6 +20,13 @@ return {
 				timeout_ms = 3000,
 				lsp_fallback = true,
 			},
+			formatters = {
+				npm_groovy_lint = {
+					command = "npm-groovy-lint",
+					args = { "--format" },
+					stdin = true,
+				},
+			},
 		},
 		config = function(_, opts)
 			require("conform").setup(opts)
@@ -44,13 +51,11 @@ return {
 				typescriptreact = { "eslint" },
 				groovy = { "npm-groovy-lint" },
 			}
-
 			vim.api.nvim_create_autocmd("BufWritePost", {
 				callback = function()
 					lint.try_lint()
 				end,
 			})
-
 			vim.keymap.set("n", "<leader>gl", lint.try_lint, { desc = "Trigger linting for current file" })
 			vim.keymap.set("n", "<leader>gs", function()
 				vim.cmd("!eslint --fix %")
