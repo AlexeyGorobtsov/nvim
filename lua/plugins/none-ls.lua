@@ -17,7 +17,7 @@ return {
 				groovy = { "npm-groovy-lint" },
 			},
 			format_on_save = {
-				timeout_ms = 3000,
+				timeout_ms = 10000,
 				lsp_fallback = true,
 			},
 			formatters = {
@@ -34,7 +34,7 @@ return {
 				require("conform").format({
 					lsp_fallback = true,
 					async = true,
-					timeout_ms = 3000,
+					timeout_ms = 10000,
 				})
 			end, { desc = "Format file or range (in visual mode)" })
 		end,
