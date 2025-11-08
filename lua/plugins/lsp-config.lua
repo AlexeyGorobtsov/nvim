@@ -1,17 +1,16 @@
 return {
 	{
-		"williamboman/mason.nvim",
+		"mason-org/mason.nvim",
 		lazy = false,
 		config = function()
 			require("mason").setup()
 		end,
 	},
 	{
-		"williamboman/mason-lspconfig.nvim",
+		"mason-org/mason-lspconfig.nvim",
 		lazy = false,
 		opts = {
 			auto_install = true,
-			-- Список серверов для автоустановки
 			ensure_installed = {
 				"ts_ls",
 				"html",
@@ -19,8 +18,6 @@ return {
 				"jsonls",
 				"cssls",
 				"pylsp",
-				-- "pyright", -- альтернатива pylsp
-				-- "ruff_lsp",
 				"groovyls",
 			},
 		},
@@ -29,7 +26,7 @@ return {
 		"neovim/nvim-lspconfig",
 		lazy = false,
 		config = function()
-			-- Получаем capabilities от nvim-cmp
+			-- Capabilities от nvim-cmp
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 			-- Глобальная конфигурация для всех серверов
@@ -95,7 +92,7 @@ return {
 				root_markers = { "package.json", ".git" },
 			}
 
-			-- Python LSP (pylsp)
+			-- Python LSP
 			vim.lsp.config.pylsp = {
 				cmd = { "pylsp" },
 				filetypes = { "python" },
@@ -114,30 +111,6 @@ return {
 				},
 			}
 
-			-- Alternative: Pyright (раскомментируйте если нужен вместо pylsp)
-			-- vim.lsp.config.pyright = {
-			-- 	cmd = { "pyright-langserver", "--stdio" },
-			-- 	filetypes = { "python" },
-			-- 	root_markers = { "pyproject.toml", "setup.py", ".git" },
-			-- 	settings = {
-			-- 		python = {
-			-- 			analysis = {
-			-- 				autoSearchPaths = true,
-			-- 				diagnosticMode = "workspace",
-			-- 				useLibraryCodeForTypes = true,
-			-- 				typeCheckingMode = "basic",
-			-- 			},
-			-- 		},
-			-- 	},
-			-- }
-
-			-- Ruff LSP (раскомментируйте если нужен)
-			-- vim.lsp.config.ruff_lsp = {
-			-- 	cmd = { "ruff-lsp" },
-			-- 	filetypes = { "python" },
-			-- 	root_markers = { "pyproject.toml", "ruff.toml", ".git" },
-			-- }
-
 			-- Groovy Language Server
 			local mason_path = vim.fn.stdpath("data") .. "/mason/"
 			local groovyls_jar = mason_path
@@ -150,7 +123,6 @@ return {
 				settings = {
 					groovy = {
 						classpath = {},
-						console = {},
 						trace = {
 							server = "verbose",
 						},
@@ -158,7 +130,7 @@ return {
 				},
 			}
 
-			-- Включаем все серверы
+			-- Включить все серверы
 			vim.lsp.enable({
 				"ts_ls",
 				"html",
@@ -166,24 +138,21 @@ return {
 				"jsonls",
 				"cssls",
 				"pylsp",
-				-- "pyright", -- если используете вместо pylsp
-				-- "ruff_lsp",
 				"groovyls",
 			})
 
-			-- Глобальные горячие клавиши и настройки (для всех LSP)
+			-- Глобальные горячие клавиши (для всех LSP)
 			vim.api.nvim_create_autocmd("LspAttach", {
 				group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
 				callback = function(args)
 					local bufnr = args.buf
 					local client = vim.lsp.get_client_by_id(args.data.client_id)
 
-					-- Вспомогательная функция для маппинга
 					local function map(mode, lhs, rhs, desc)
 						vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc, noremap = true, silent = true })
 					end
 
-					-- Базовые маппинги для всех LSP
+					-- Базовые маппинги
 					map("n", "gd", vim.lsp.buf.definition, "Go to Definition")
 					map("n", "gD", vim.lsp.buf.declaration, "Go to Declaration")
 					map("n", "gr", vim.lsp.buf.references, "References")
@@ -197,16 +166,16 @@ return {
 						vim.lsp.buf.format({ async = true })
 					end, "Format")
 
-					-- Специфичные действия для groovyls
-					if client.name == "groovyls" then
-						print("groovyls attached to buffer " .. bufnr)
-					end
-
-					-- Включить inlay hints если поддерживается
-					if client.supports_method("textDocument/inlayHint") then
+					-- Inlay hints
+					if client and client.supports_method("textDocument/inlayHint") then
 						map("n", "<leader>th", function()
 							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }))
 						end, "Toggle Inlay Hints")
+					end
+
+					-- Логирование для Groovy
+					if client and client.name == "groovyls" then
+						print("groovyls attached to buffer " .. bufnr)
 					end
 				end,
 			})
@@ -226,7 +195,7 @@ return {
 				},
 			})
 
-			-- Иконки для диагностики в gutter
+			-- Иконки диагностики
 			local signs = {
 				Error = " ",
 				Warn = " ",
@@ -238,7 +207,13 @@ return {
 				vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 			end
 
-			-- Кастомные команды для Groovy LSP
+			-- Маппинги диагностики
+			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous Diagnostic" })
+			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
+			vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show Diagnostic" })
+			vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic List" })
+
+			-- Кастомные команды для Groovy
 			vim.api.nvim_create_user_command("StopGroovyLSP", function()
 				vim.cmd("LspStop groovyls")
 			end, { desc = "Stop Groovy Language Server" })
@@ -249,12 +224,6 @@ return {
 					vim.cmd("LspStart groovyls")
 				end, 500)
 			end, { desc = "Restart Groovy Language Server" })
-
-			-- Дополнительные полезные маппинги для диагностики
-			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous Diagnostic" })
-			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
-			vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show Diagnostic" })
-			vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic List" })
 		end,
 	},
 }
