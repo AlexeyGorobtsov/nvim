@@ -41,3 +41,6 @@ vim.keymap.set("n", "p", '"0p', { noremap = true, desc = "Paste from yank regist
 vim.keymap.set("n", "P", '"0P', { noremap = true, desc = "Paste before cursor from yank register (normal mode)" })
 vim.keymap.set("v", "p", '"0p', { noremap = true, desc = "Paste from yank register (visual mode)" })
 vim.keymap.set("v", "P", '"0P', { noremap = true, desc = "Paste before cursor from yank register (visual mode)" })
+
+-- disable scroll
+vim.o.mouse = ""
