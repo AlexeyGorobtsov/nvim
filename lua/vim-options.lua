@@ -41,3 +41,16 @@ vim.keymap.set("n", "p", '"0p', { noremap = true, desc = "Paste from yank regist
 vim.keymap.set("n", "P", '"0P', { noremap = true, desc = "Paste before cursor from yank register (normal mode)" })
 vim.keymap.set("v", "p", '"0p', { noremap = true, desc = "Paste from yank register (visual mode)" })
 vim.keymap.set("v", "P", '"0P', { noremap = true, desc = "Paste before cursor from yank register (visual mode)" })
+-- Поддержка русской раскладки для macOS
+vim.cmd([[
+  set langmap=йq,цw,уe,кr,еt,нy,гu,шi,щo,зp,х[,ъ],фa,ыs,вd,аf,пg,рh,оj,лk,дl,ж\\;,э',яz,чx,сc,мv,иb,тn,ьm,б\\,,ю.,Й;Q,Ц;W,У;E,К;R,Е;T,Н;Y,Г;U,Ш;I,Щ;O,З;P,Х;{,Ъ;},Ф;A,Ы;S,В;D,А;F,П;G,Р;H,О;J,Л;K,Д;L,Ж;:,Э;\",Я;Z,Ч;X,С;C,М;V,И;B,Т;N,Ь;M,Б;<,Ю;>
+]])
+-- Дополнительно для улучшения поддержки
+vim.api.nvim_exec(
+	[[
+  set keymap=russian-jcukenwin
+  set iminsert=0
+  set imsearch=0
+]],
+	false
+)
