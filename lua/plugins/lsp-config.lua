@@ -1,229 +1,159 @@
 return {
-	{
-		"mason-org/mason.nvim",
-		lazy = false,
-		config = function()
-			require("mason").setup()
-		end,
-	},
-	{
-		"mason-org/mason-lspconfig.nvim",
-		lazy = false,
-		opts = {
-			auto_install = true,
-			ensure_installed = {
-				"ts_ls",
-				"html",
-				"lua_ls",
-				"jsonls",
-				"cssls",
-				"pylsp",
-				"groovyls",
-			},
-		},
-	},
-	{
-		"neovim/nvim-lspconfig",
-		lazy = false,
-		config = function()
-			-- Capabilities от nvim-cmp
-			local capabilities = require("cmp_nvim_lsp").default_capabilities()
+  {
+    "neovim/nvim-lspconfig",
+    lazy = false,
+    config = function()
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
 
-			-- Глобальная конфигурация для всех серверов
-			vim.lsp.config("*", {
-				capabilities = capabilities,
-			})
+      vim.lsp.config("*", {
+        capabilities = capabilities,
+      })
 
-			-- TypeScript/JavaScript
-			vim.lsp.config.ts_ls = {
-				cmd = { "typescript-language-server", "--stdio" },
-				filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-				root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
-				settings = {
-					typescript = {
-						preferences = {
-							importModuleSpecifierPreference = "relative",
-						},
-					},
-					javascript = {
-						preferences = {
-							importModuleSpecifierPreference = "relative",
-						},
-					},
-				},
-			}
+      -- TypeScript/JavaScript
+      vim.lsp.config.ts_ls = {
+        cmd = { "typescript-language-server", "--stdio" },
+        filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+        root_markers = { "package.json", "tsconfig.json", "jsconfig.json", ".git" },
+      }
 
-			-- HTML
-			vim.lsp.config.html = {
-				cmd = { "vscode-html-language-server", "--stdio" },
-				filetypes = { "html" },
-				root_markers = { "package.json", ".git" },
-			}
+      -- 🆕 ESLint LSP
+      vim.lsp.config.eslint = {
+        cmd = { "vscode-eslint-language-server", "--stdio" },
+        filetypes = { 
+          "javascript", 
+          "javascriptreact", 
+          "typescript", 
+          "typescriptreact", 
+          "vue", 
+          "svelte" 
+        },
+        root_markers = { 
+          "eslint.config.js",
+          "eslint.config.mjs",
+          "eslint.config.cjs",
+          ".eslintrc.js", 
+          ".eslintrc.json", 
+          "package.json", 
+          ".git" 
+        },
+        settings = {
+          validate = "on",
+          rulesCustomizations = {},
+          run = "onType",
+          nodePath = "",
+          workingDirectory = { mode = "auto" },
+        },
+      }
 
-			-- Lua
-			vim.lsp.config.lua_ls = {
-				cmd = { "lua-language-server" },
-				filetypes = { "lua" },
-				root_markers = { ".luarc.json", ".luacheckrc", ".stylua.toml", ".git" },
-				settings = {
-					Lua = {
-						runtime = { version = "LuaJIT" },
-						diagnostics = { globals = { "vim" } },
-						workspace = {
-							library = { vim.env.VIMRUNTIME },
-							checkThirdParty = false,
-						},
-						telemetry = { enable = false },
-					},
-				},
-			}
+      -- HTML
+      vim.lsp.config.html = {
+        cmd = { "vscode-html-language-server", "--stdio" },
+        filetypes = { "html" },
+        root_markers = { "package.json", ".git" },
+      }
 
-			-- JSON
-			vim.lsp.config.jsonls = {
-				cmd = { "vscode-json-language-server", "--stdio" },
-				filetypes = { "json", "jsonc" },
-				root_markers = { "package.json", ".git" },
-			}
+      -- CSS
+      vim.lsp.config.cssls = {
+        cmd = { "vscode-css-language-server", "--stdio" },
+        filetypes = { "css", "scss", "less" },
+        root_markers = { "package.json", ".git" },
+      }
 
-			-- CSS
-			vim.lsp.config.cssls = {
-				cmd = { "vscode-css-language-server", "--stdio" },
-				filetypes = { "css", "scss", "less" },
-				root_markers = { "package.json", ".git" },
-			}
+      -- JSON
+      vim.lsp.config.jsonls = {
+        cmd = { "vscode-json-language-server", "--stdio" },
+        filetypes = { "json", "jsonc" },
+        root_markers = { "package.json", ".git" },
+      }
 
-			-- Python LSP
-			vim.lsp.config.pylsp = {
-				cmd = { "pylsp" },
-				filetypes = { "python" },
-				root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
-				settings = {
-					pylsp = {
-						plugins = {
-							pycodestyle = {
-								ignore = { "W391" },
-								maxLineLength = 100,
-							},
-							pylint = { enabled = false },
-							flake8 = { enabled = false },
-						},
-					},
-				},
-			}
+      -- Lua
+      vim.lsp.config.lua_ls = {
+        cmd = { "lua-language-server" },
+        filetypes = { "lua" },
+        root_markers = { ".luarc.json", ".luacheckrc", ".stylua.toml", ".git" },
+        settings = {
+          Lua = {
+            runtime = { version = "LuaJIT" },
+            diagnostics = { globals = { "vim" } },
+            workspace = {
+              library = { vim.env.VIMRUNTIME },
+              checkThirdParty = false,
+            },
+            telemetry = { enable = false },
+          },
+        },
+      }
 
-			-- Groovy Language Server
-			local mason_path = vim.fn.stdpath("data") .. "/mason/"
-			local groovyls_jar = mason_path
-				.. "packages/groovy-language-server/build/libs/groovy-language-server-all.jar"
+      -- Включить серверы
+      vim.lsp.enable({
+        "ts_ls",
+        "eslint",
+        "html",
+        "cssls",
+        "jsonls",
+        "lua_ls",
+      })
 
-			vim.lsp.config.groovyls = {
-				cmd = { "java", "-jar", groovyls_jar },
-				filetypes = { "groovy" },
-				root_markers = { "*.gradle", "*.groovy", ".git" },
-				settings = {
-					groovy = {
-						classpath = {},
-						trace = {
-							server = "verbose",
-						},
-					},
-				},
-			}
+      -- Горячие клавиши при подключении LSP
+      vim.api.nvim_create_autocmd("LspAttach", {
+        group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
+        callback = function(args)
+          local bufnr = args.buf
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
 
-			-- Включить все серверы
-			vim.lsp.enable({
-				"ts_ls",
-				"html",
-				"lua_ls",
-				"jsonls",
-				"cssls",
-				"pylsp",
-				"groovyls",
-			})
+          local function map(mode, lhs, rhs, desc)
+            vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+          end
 
-			-- Глобальные горячие клавиши (для всех LSP)
-			vim.api.nvim_create_autocmd("LspAttach", {
-				group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
-				callback = function(args)
-					local bufnr = args.buf
-					local client = vim.lsp.get_client_by_id(args.data.client_id)
+          -- Навигация
+          map("n", "gd", vim.lsp.buf.definition, "Go to Definition") -- Перейти к определению	Посмотреть код функции
+          map("n", "gD", vim.lsp.buf.declaration, "Go to Declaration") -- Перейти к декларации	Найти .d.ts файл
+          map("n", "gr", vim.lsp.buf.references, "References") -- Все использования	Перед удалением/рефакторингом
+          map("n", "gi", vim.lsp.buf.implementation, "Implementation") -- Реализации интерфейса	ООП/TypeScript
+          map("n", "K", vim.lsp.buf.hover, "Hover") -- Документация	Быстро посмотреть описание
+          map("n", "<C-k>", vim.lsp.buf.signature_help, "Signature Help") -- Параметры функции	Во время вызова функции
 
-					local function map(mode, lhs, rhs, desc)
-						vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc, noremap = true, silent = true })
-					end
+          -- Действия
+          map("n", "<leader>rn", vim.lsp.buf.rename, "Rename") -- Переименовать	Рефакторинг имени
+          map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code Action") -- Быстрые исправления	Импорты/фиксы ошибок
+          map("n", "<leader>f", function() -- Форматировать	Привести код в порядок
+            vim.lsp.buf.format({ async = true })
+          end, "Format")
 
-					-- Базовые маппинги
-					map("n", "gd", vim.lsp.buf.definition, "Go to Definition")
-					map("n", "gD", vim.lsp.buf.declaration, "Go to Declaration")
-					map("n", "gr", vim.lsp.buf.references, "References")
-					map("n", "gi", vim.lsp.buf.implementation, "Go to Implementation")
-					map("n", "K", vim.lsp.buf.hover, "Hover Documentation")
-					map("n", "<C-k>", vim.lsp.buf.signature_help, "Signature Help")
-					map("n", "<leader>D", vim.lsp.buf.type_definition, "Type Definition")
-					map("n", "<leader>rn", vim.lsp.buf.rename, "Rename")
-					map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code Action")
-					map("n", "<leader>f", function()
-						vim.lsp.buf.format({ async = true })
-					end, "Format")
+          -- Inlay hints
+          if client and client:supports_method("textDocument/inlayHint") then
+            map("n", "<leader>th", function() -- Показать типы	TypeScript hints
+              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }))
+            end, "Toggle Inlay Hints")
+          end
+        end,
+      })
 
-					-- Inlay hints
-					if client and client.supports_method("textDocument/inlayHint") then
-						map("n", "<leader>th", function()
-							vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }))
-						end, "Toggle Inlay Hints")
-					end
+      -- Настройка диагностики с иконками
+      vim.diagnostic.config({
+        virtual_text = true,
+        signs = {
+          text = {
+            [vim.diagnostic.severity.ERROR] = " ",
+            [vim.diagnostic.severity.WARN] = " ",
+            [vim.diagnostic.severity.HINT] = "󰠠 ",
+            [vim.diagnostic.severity.INFO] = " ",
+          },
+        },
+        update_in_insert = false,
+        underline = true,
+        severity_sort = true,
+        float = {
+          border = "rounded",
+          source = "always",
+        },
+      })
 
-					-- Логирование для Groovy
-					if client and client.name == "groovyls" then
-						print("groovyls attached to buffer " .. bufnr)
-					end
-				end,
-			})
-
-			-- Настройка диагностики
-			vim.diagnostic.config({
-				virtual_text = true,
-				signs = true,
-				update_in_insert = false,
-				underline = true,
-				severity_sort = true,
-				float = {
-					border = "rounded",
-					source = "always",
-					header = "",
-					prefix = "",
-				},
-			})
-
-			-- Иконки диагностики
-			local signs = {
-				Error = " ",
-				Warn = " ",
-				Hint = "󰠠 ",
-				Info = " ",
-			}
-			for type, icon in pairs(signs) do
-				local hl = "DiagnosticSign" .. type
-				vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-			end
-
-			-- Маппинги диагностики
-			vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous Diagnostic" })
-			vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
-			vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show Diagnostic" })
-			vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic List" })
-
-			-- Кастомные команды для Groovy
-			vim.api.nvim_create_user_command("StopGroovyLSP", function()
-				vim.cmd("LspStop groovyls")
-			end, { desc = "Stop Groovy Language Server" })
-
-			vim.api.nvim_create_user_command("RestartGroovyLSP", function()
-				vim.cmd("LspStop groovyls")
-				vim.defer_fn(function()
-					vim.cmd("LspStart groovyls")
-				end, 500)
-			end, { desc = "Restart Groovy Language Server" })
-		end,
-	},
+      -- Навигация по диагностике
+      vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous Diagnostic" }) -- Пред./след. ошибка	Навигация по ошибкам
+      vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next Diagnostic" }) -- Пред./след. ошибка	Навигация по ошибкам
+      vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show Diagnostic" }) -- Показать ошибку	Детали ошибки
+      vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostic List" }) -- Список ошибок	Обзор всех проблем
+    end,
+  },
 }

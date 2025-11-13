@@ -44,3 +44,21 @@ vim.keymap.set("v", "P", '"0P', { noremap = true, desc = "Paste before cursor fr
 
 -- disable scroll
 vim.o.mouse = ""
+
+-- Подсветка синтаксиса
+vim.cmd('syntax on')
+vim.cmd('filetype plugin indent on')
+
+vim.opt.termguicolors = true
+vim.cmd('colorscheme habamax')
+vim.opt.cursorline = true
+
+
+vim.g.netrw_banner = 0          -- Убрать баннер
+vim.g.netrw_liststyle = 3       -- Древовидный стиль
+-- vim.g.netrw_browse_split = 4    -- Открывать в предыдущем окне
+vim.g.netrw_altv = 1            -- Разделение вправо
+vim.g.netrw_winsize = 23        -- Ширина 23%
+vim.g.netrw_keepdir = 0         -- Синхронизировать текущую директорию
+-- Горячая клавиша
+vim.keymap.set('n', '<C-n>', ':Lex<CR>', { desc = 'Toggle File Explorer' })
