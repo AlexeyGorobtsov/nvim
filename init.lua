@@ -10,6 +10,9 @@ if not vim.loop.fs_stat(lazypath) then
 		lazypath,
 	})
 end
+-- Добавляем fzf в PATH для Neovim
+vim.env.PATH = "/Users/18282607/Documents/localhost/fzf/bin:" .. vim.env.PATH
+-- vim.env.PATH = vim.env.PATH .. ':/bin:/usr/bin:/usr/local/bin'
 vim.opt.rtp:prepend(lazypath)
 require("vim-options")
 require("lazy").setup("plugins")
@@ -62,3 +65,4 @@ vim.opt.wildmode = "longest:full,full"
 
 -- Для grep/vimgrep
 vim.opt.grepprg = "rg --vimgrep --no-heading --smart-case"
+

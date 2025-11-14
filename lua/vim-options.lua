@@ -54,11 +54,42 @@ vim.cmd('colorscheme habamax')
 vim.opt.cursorline = true
 
 
-vim.g.netrw_banner = 0          -- Убрать баннер
-vim.g.netrw_liststyle = 3       -- Древовидный стиль
--- vim.g.netrw_browse_split = 4    -- Открывать в предыдущем окне
-vim.g.netrw_altv = 1            -- Разделение вправо
-vim.g.netrw_winsize = 23        -- Ширина 23%
-vim.g.netrw_keepdir = 0         -- Синхронизировать текущую директорию
+-- vim.g.netrw_banner = 0          -- Убрать баннер
+-- vim.g.netrw_liststyle = 3       -- Древовидный стиль
+-- -- vim.g.netrw_browse_split = 4    -- Открывать в предыдущем окне
+-- vim.g.netrw_altv = 1            -- Разделение вправо
+-- vim.g.netrw_winsize = 23        -- Ширина 23%
+-- vim.g.netrw_keepdir = 0         -- Синхронизировать текущую директорию
+
+-- Команды для работы с файлами
+-- vim.g.netrw_localcopycmd = 'cp -r'
+-- vim.g.netrw_localmovecmd = 'mv'
+-- vim.g.netrw_localrmdir = 'rm -r'
+-- vim.g.netrw_localcopycmd = 'cp'
+-- vim.g.netrw_localcopydircmd = 'cp -R'  -- Для директорий отдельная переменная!
+-- vim.g.netrw_localmovecmd = 'mv'
+-- vim.g.netrw_localrmdir = 'rm -r'
+-- vim.g.netrw_localmkdir = 'mkdir'
+
 -- Горячая клавиша
-vim.keymap.set('n', '<C-n>', ':Lex<CR>', { desc = 'Toggle File Explorer' })
+-- vim.keymap.set('n', '<C-n>', ':Lex<CR>', { desc = 'Toggle File Explorer' })
+-- Функция для toggle Netrw
+
+vim.keymap.set('n', '<C-n>', '<cmd>FM<cr>', { desc = 'Toggle File Explorer' })
+vim.keymap.set('n', '?', function()
+  vim.notify([[
+Горячие клавиши:
+  Enter/l - открыть
+  h - назад
+  yy - копировать
+  dd - вырезать
+  p - вставить
+  D - удалить
+  a - новый файл
+  A - новая папка
+  r - переименовать
+  R - обновить
+  ? - справка
+  q/Esc - выход
+  ]], vim.log.levels.INFO)
+end, opts)
