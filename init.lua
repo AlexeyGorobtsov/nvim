@@ -10,12 +10,12 @@ if not vim.loop.fs_stat(lazypath) then
 		lazypath,
 	})
 end
--- Добавляем fzf в PATH для Neovim
-vim.env.PATH = "/Users/18282607/Documents/localhost/fzf/bin:" .. vim.env.PATH
--- vim.env.PATH = vim.env.PATH .. ':/bin:/usr/bin:/usr/local/bin'
 vim.opt.rtp:prepend(lazypath)
 require("vim-options")
-require("lazy").setup("plugins")
+require("lazy").setup("plugins", {
+  rocks = { enabled = false },  -- отключаем luarocks
+})
+
 vim.api.nvim_create_user_command("GroovyLint", function()
 	vim.cmd("!npm-groovy-lint " .. vim.fn.expand("%"))
 end, {})

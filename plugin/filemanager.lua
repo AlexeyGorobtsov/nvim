@@ -129,13 +129,11 @@ local function paste_file()
   local dest = M.current_path .. '/' .. M.clipboard.name
   
   if M.clipboard.action == 'copy' then
-    -- Используем системную команду cp
     local cmd = string.format('cp -r %s %s',
       vim.fn.shellescape(M.clipboard.path),
       vim.fn.shellescape(dest))
     vim.fn.system(cmd)
   else
-    -- Используем mv
     local cmd = string.format('mv %s %s',
       vim.fn.shellescape(M.clipboard.path),
       vim.fn.shellescape(dest))
@@ -152,13 +150,16 @@ local function delete_file()
   local file = get_current_file()
   if not file or file.name == '..' then return end
   
-  local choice = vim.fn.confirm("Удалить " .. file.name .. "?", "&Да\n&Нет", 2)
-  if choice == 1 then
-    local cmd = string.format('rm -rf %s', vim.fn.shellescape(file.path))
-    vim.fn.system(cmd)
-    render()
-    vim.notify("✓ Удалено: " .. file.name, vim.log.levels.INFO)
-  end
+  vim.ui.input({
+    prompt = string.format("⚠️  Удалить '%s'? (yes/no): ", file.name),
+  }, function(input)
+    if input == "yes" or input == "y" then
+      local cmd = string.format('rm -rf %s', vim.fn.shellescape(file.path))
+      vim.fn.system(cmd)
+      render()
+      vim.notify("✓ Удалено: " .. file.name, vim.log.levels.INFO)
+    end
+  end)
 end
 
 -- Создать папку
@@ -206,17 +207,111 @@ local function rename_file()
   end)
 end
 
+-- LCD в текущую директорию
+local function lcd_to_current()
+  local file = get_current_file()
+  local target_path
+  
+  if file and file.type == 'directory' then
+    target_path = file.path
+  else
+    target_path = M.current_path
+  end
+  
+  if M.win and api.nvim_win_is_valid(M.win) then
+    api.nvim_win_close(M.win, true)
+  end
+  
+  vim.cmd('lcd ' .. vim.fn.fnameescape(target_path))
+  vim.notify('📂 LCD: ' .. target_path, vim.log.levels.INFO)
+end
+
+-- Копирование названия файла/папки в буфер
+local function yank_name()
+  local names = {}
+  
+  -- Проверяем, есть ли визуальное выделение
+  local mode = api.nvim_get_mode().mode
+  
+  if mode == 'v' or mode == 'V' then
+    -- Визуальный режим - копируем несколько имён
+    local start_line = vim.fn.line("'<")
+    local end_line = vim.fn.line("'>")
+    
+    for line = start_line, end_line do
+      if line == 3 then
+        table.insert(names, '..')
+      elseif line > 3 and M.files[line - 3] then
+        table.insert(names, M.files[line - 3].name)
+      end
+    end
+    
+    -- Выходим из визуального режима
+    local esc = api.nvim_replace_termcodes('<Esc>', true, false, true)
+    api.nvim_feedkeys(esc, 'n', false)  --Корректный выход из visual mode
+  else
+    -- Нормальный режим - копируем одно имя
+    local file = get_current_file()
+    if file then
+      table.insert(names, file.name)
+    end
+  end
+  
+  if #names > 0 then
+    local result = table.concat(names, ' ')
+    -- Копируем в системный буфер и в буфер vim
+    vim.fn.setreg('+', result)
+    vim.fn.setreg('"', result)
+    
+    local preview = #result > 50 and (result:sub(1, 47) .. '...') or result
+    vim.notify("📋 Скопировано в буфер: " .. preview, vim.log.levels.INFO)
+  end
+end
+
+-- Копирование полного пути
+local function yank_path()
+  local paths = {}
+  local mode = api.nvim_get_mode().mode
+  
+  if mode == 'v' or mode == 'V' then
+    local start_line = vim.fn.line("'<")
+    local end_line = vim.fn.line("'>")
+    
+    for line = start_line, end_line do
+      if line == 3 then
+        table.insert(paths, vim.fn.fnamemodify(M.current_path, ':h'))
+      elseif line > 3 and M.files[line - 3] then
+        table.insert(paths, M.files[line - 3].path)
+      end
+    end
+    
+    vim.cmd('normal! ')
+  else
+    local file = get_current_file()
+    if file then
+      table.insert(paths, file.path)
+    end
+  end
+  
+  if #paths > 0 then
+    local result = table.concat(paths, ' ')
+    vim.fn.setreg('+', result)
+    vim.fn.setreg('"', result)
+    
+    local preview = #result > 50 and (result:sub(1, 47) .. '...') or result
+    vim.notify("📋 Скопирован путь: " .. preview, vim.log.levels.INFO)
+  end
+end
+
 -- Главная функция открытия
 function M.open(path)
   M.current_path = path or vim.fn.getcwd()
   
-  -- Создаём буфер
   M.buf = api.nvim_create_buf(false, true)
   api.nvim_buf_set_option(M.buf, 'bufhidden', 'wipe')
   api.nvim_buf_set_option(M.buf, 'buftype', 'nofile')
   api.nvim_buf_set_name(M.buf, 'FileManager')
   
-  -- Создаём окно
   M.win = api.nvim_open_win(M.buf, true, {
     relative = 'editor',
     width = math.floor(vim.o.columns * 0.8),
@@ -227,8 +322,9 @@ function M.open(path)
     border = 'rounded'
   })
   
-  -- Маппинги
   local opts = {buffer = M.buf, silent = true}
+  
+  -- Навигация
   vim.keymap.set('n', '<CR>', open_entry, opts)
   vim.keymap.set('n', 'l', open_entry, opts)
   vim.keymap.set('n', 'h', function()
@@ -237,14 +333,24 @@ function M.open(path)
     api.nvim_win_set_cursor(M.win, {3, 0})
   end, opts)
   
+  -- Операции с файлами
   vim.keymap.set('n', 'yy', copy_file, opts)
   vim.keymap.set('n', 'dd', cut_file, opts)
   vim.keymap.set('n', 'p', paste_file, opts)
   vim.keymap.set('n', 'D', delete_file, opts)
+  
+  -- Копирование в буфер обмена
+  vim.keymap.set({'n', 'v'}, 'yn', yank_name, opts)
+  vim.keymap.set({'n', 'v'}, 'yp', yank_path, opts)
+  
+  -- Создание
   vim.keymap.set('n', 'a', create_file, opts)
   vim.keymap.set('n', 'A', create_dir, opts)
+  
+  -- Другое
   vim.keymap.set('n', 'r', rename_file, opts)
   vim.keymap.set('n', 'R', render, opts)
+  vim.keymap.set('n', 'c', lcd_to_current, opts)
   vim.keymap.set('n', 'q', function()
     api.nvim_win_close(M.win, true)
   end, opts)
@@ -255,7 +361,6 @@ function M.open(path)
   render()
   api.nvim_win_set_cursor(M.win, {3, 0})
   
-  -- Подсветка синтаксиса
   vim.cmd([[
     syn match FMDir "📁.*"
     syn match FMFile "📄.*"
@@ -266,7 +371,6 @@ function M.open(path)
   ]])
 end
 
--- Команда
 vim.api.nvim_create_user_command('FM', function(opts)
   M.open(opts.args ~= '' and opts.args or nil)
 end, {
