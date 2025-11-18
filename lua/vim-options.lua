@@ -55,20 +55,3 @@ vim.opt.cursorline = true
 
 
 vim.keymap.set('n', '<C-n>', '<cmd>FM<cr>', { desc = 'Toggle File Explorer' })
-vim.keymap.set('n', '?', function()
-  vim.notify([[
-Горячие клавиши:
-  Enter/l - открыть
-  h - назад
-  yy - копировать
-  dd - вырезать
-  p - вставить
-  D - удалить
-  a - новый файл
-  A - новая папка
-  r - переименовать
-  R - обновить
-  ? - справка
-  q/Esc - выход
-  ]], vim.log.levels.INFO)
-end, opts)

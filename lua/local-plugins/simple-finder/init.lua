@@ -27,14 +27,14 @@ end
 M.find_files = function()
   vim.ui.input({ prompt = "🔍 Найти файл (glob): ", default = "*" }, function(pattern)
     if not pattern or pattern == "" then return end
-    
+
     local excludes = get_find_excludes()
     local cmd = string.format(
       "find . -type f -iname %s %s 2>/dev/null | head -n 500",
       vim.fn.shellescape("*" .. pattern .. "*"),
       excludes
     )
-    
+
     vim.fn.jobstart(cmd, {
       stdout_buffered = true,
       on_stdout = function(_, data)
@@ -42,12 +42,12 @@ M.find_files = function()
           local files = vim.tbl_filter(function(line)
             return line ~= ""
           end, data)
-          
+
           if #files == 0 then
             vim.notify("❌ Файлы не найдены", vim.log.levels.WARN)
             return
           end
-          
+
           -- Формируем список для quickfix
           local qf_list = {}
           for _, file in ipairs(files) do
@@ -58,7 +58,7 @@ M.find_files = function()
               text = file,
             })
           end
-          
+
           vim.fn.setqflist(qf_list, 'r')
           vim.cmd('copen')
           vim.notify(string.format("✓ Найдено файлов: %d", #qf_list), vim.log.levels.INFO)
@@ -74,14 +74,14 @@ end
 M.find_directories = function()
   vim.ui.input({ prompt = "📁 Найти папку: ", default = "" }, function(pattern)
     if not pattern or pattern == "" then return end
-    
+
     local excludes = get_find_excludes()
     local cmd = string.format(
       "find . -type d -iname %s %s 2>/dev/null | head -n 200",
       vim.fn.shellescape("*" .. pattern .. "*"),
       excludes
     )
-    
+
     vim.fn.jobstart(cmd, {
       stdout_buffered = true,
       on_stdout = function(_, data)
@@ -89,12 +89,12 @@ M.find_directories = function()
           local dirs = vim.tbl_filter(function(line)
             return line ~= "" and line ~= "."
           end, data)
-          
+
           if #dirs == 0 then
             vim.notify("❌ Папки не найдены", vim.log.levels.WARN)
             return
           end
-          
+
           vim.ui.select(dirs, {
             prompt = "Выберите папку:",
           }, function(choice)
@@ -125,27 +125,27 @@ M.find_buffers = function()
       end
     end
   end
-  
+
   if #buffers == 0 then
     vim.notify("❌ Нет открытых буферов", vim.log.levels.WARN)
     return
   end
-  
+
   vim.ui.input({ prompt = "🔍 Фильтр буферов: ", default = "" }, function(pattern)
     if not pattern then return end
-    
+
     local filtered = buffers
     if pattern ~= "" then
       filtered = vim.tbl_filter(function(b)
         return b.filename:lower():find(pattern:lower(), 1, true)
       end, buffers)
     end
-    
+
     if #filtered == 0 then
       vim.notify("❌ Буферы не найдены", vim.log.levels.WARN)
       return
     end
-    
+
     local qf_list = {}
     for _, buf in ipairs(filtered) do
       table.insert(qf_list, {
@@ -155,7 +155,7 @@ M.find_buffers = function()
         text = buf.filename,
       })
     end
-    
+
     vim.fn.setqflist(qf_list, 'r')
     vim.cmd('copen')
   end)
@@ -170,27 +170,27 @@ M.recent_files = function()
       if #oldfiles >= 100 then break end
     end
   end
-  
+
   if #oldfiles == 0 then
     vim.notify("❌ Нет недавних файлов", vim.log.levels.WARN)
     return
   end
-  
+
   vim.ui.input({ prompt = "🕐 Фильтр недавних: ", default = "" }, function(pattern)
     if not pattern then return end
-    
+
     local filtered = oldfiles
     if pattern ~= "" then
       filtered = vim.tbl_filter(function(f)
         return f:lower():find(pattern:lower(), 1, true)
       end, oldfiles)
     end
-    
+
     if #filtered == 0 then
       vim.notify("❌ Файлы не найдены", vim.log.levels.WARN)
       return
     end
-    
+
     local qf_list = {}
     for _, file in ipairs(filtered) do
       table.insert(qf_list, {
@@ -199,7 +199,7 @@ M.recent_files = function()
         text = file,
       })
     end
-    
+
     vim.fn.setqflist(qf_list, 'r')
     vim.cmd('copen')
   end)
@@ -211,15 +211,15 @@ M.git_files = function()
     vim.notify("❌ Not a git repository", vim.log.levels.ERROR)
     return
   end
-  
+
   vim.ui.input({ prompt = "🔀 Фильтр git файлов: ", default = "" }, function(pattern)
     if not pattern then return end
-    
+
     local cmd = "git ls-files"
     if pattern ~= "" then
       cmd = cmd .. " | grep -i " .. vim.fn.shellescape(pattern)
     end
-    
+
     vim.fn.jobstart(cmd, {
       stdout_buffered = true,
       on_stdout = function(_, data)
@@ -227,12 +227,12 @@ M.git_files = function()
           local files = vim.tbl_filter(function(line)
             return line ~= ""
           end, data)
-          
+
           if #files == 0 then
             vim.notify("❌ Файлы не найдены", vim.log.levels.WARN)
             return
           end
-          
+
           local qf_list = {}
           for _, file in ipairs(files) do
             table.insert(qf_list, {
@@ -241,7 +241,7 @@ M.git_files = function()
               text = file,
             })
           end
-          
+
           vim.fn.setqflist(qf_list, 'r')
           vim.cmd('copen')
           vim.notify(string.format("✓ Найдено: %d", #files), vim.log.levels.INFO)
@@ -256,18 +256,18 @@ end
 -- 🔎 Grep
 M.live_grep = function()
   local excludes = get_grep_excludes()
-  
+
   vim.ui.input({ prompt = "🔎 Grep: " }, function(pattern)
     if not pattern or pattern == "" then return end
-    
+
     local cmd = string.format(
       "grep -rn -I %s -e %s . 2>/dev/null",
       excludes,
       vim.fn.shellescape(pattern)
     )
-    
+
     vim.cmd('cexpr system("' .. cmd:gsub('"', '\\"') .. '")')
-    
+
     local qf_list = vim.fn.getqflist()
     if #qf_list > 0 then
       vim.cmd('copen')
@@ -312,11 +312,11 @@ M.show_help = function()
     "",
     "❓ Помощь: <leader>f?",
   }
-  
+
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, help)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
-  
+
   local width = 54
   local height = #help
   local win = vim.api.nvim_open_win(buf, true, {
@@ -328,7 +328,7 @@ M.show_help = function()
     style = 'minimal',
     border = 'rounded',
   })
-  
+
   vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf })
   vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf })
 end
