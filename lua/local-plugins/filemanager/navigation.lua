@@ -60,10 +60,25 @@ function M.lcd_to_current()
     target_path = state.current_path
   end
 
+  -- Сохраняем ID окна файлового менеджера
+  local fm_win = state.win
+
+  -- Переключаемся на предыдущее окно (откуда открыли FM)
+  vim.cmd('wincmd p')
+
+  -- Применяем LCD к рабочему окну
   vim.cmd('lcd ' .. vim.fn.fnameescape(target_path))
-  state.last_lcd_path = target_path  -- сохраняем путь
-  state.current_path = target_path   -- обновляем текущий путь
+
+  -- Возвращаемся в окно файлового менеджера
+  if fm_win and vim.api.nvim_win_is_valid(fm_win) then
+    vim.api.nvim_set_current_win(fm_win)
+  end
+
+  -- Сохраняем путь и обновляем
+  state.last_lcd_path = target_path
+  state.current_path = target_path
   ui.render()
+
   vim.notify('📂 LCD: ' .. target_path, vim.log.levels.INFO)
 end
 
