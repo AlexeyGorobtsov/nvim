@@ -31,7 +31,7 @@ end
 
 -- Переименовать
 function M.rename_file()
-  local file = require('filemanager.navigation').get_current_file()
+  local file = require('local-plugins.filemanager.navigation').get_current_file()
   if not file or file.name == '..' then return end
   
   vim.ui.input({prompt = 'Новое имя: ', default = file.name}, function(name)
