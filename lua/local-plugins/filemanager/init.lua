@@ -5,7 +5,7 @@ local keymaps = require('local-plugins.filemanager.keymaps')
 local M = {}
 
 function M.open(path)
-  state.current_path = path or vim.fn.getcwd()
+  state.current_path = path or state.last_lcd_path or vim.fn.getcwd()
 
   ui.create_window()
   keymaps.setup(state.buf)

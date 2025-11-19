@@ -60,14 +60,10 @@ function M.lcd_to_current()
     target_path = state.current_path
   end
 
-  -- Сделать lcd
   vim.cmd('lcd ' .. vim.fn.fnameescape(target_path))
-
-  -- Обновить путь в FM и перерисовать
-  state.current_path = target_path
+  state.last_lcd_path = target_path  -- сохраняем путь
+  state.current_path = target_path   -- обновляем текущий путь
   ui.render()
-  api.nvim_win_set_cursor(state.win, { 3, 0 })
-
   vim.notify('📂 LCD: ' .. target_path, vim.log.levels.INFO)
 end
 

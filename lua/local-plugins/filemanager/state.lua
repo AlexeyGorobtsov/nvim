@@ -5,6 +5,7 @@ M.buf = nil
 M.win = nil
 M.files = {}
 M.clipboard = nil
+M.last_lcd_path = nil
 
 function M.reset()
   M.current_path = vim.fn.getcwd()
@@ -12,6 +13,7 @@ function M.reset()
   M.win = nil
   M.files = {}
   M.clipboard = nil
+  M.last_lcd_path = nil
 end
 
 function M.is_valid()
