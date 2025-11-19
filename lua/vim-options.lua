@@ -54,4 +54,3 @@ vim.cmd('colorscheme habamax')
 vim.opt.cursorline = true
 
 
-vim.keymap.set('n', '<C-n>', '<cmd>FM<cr>', { desc = 'Toggle File Explorer' })
