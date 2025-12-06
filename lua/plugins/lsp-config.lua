@@ -6,11 +6,12 @@ return {
       -- Включаем встроенное автодополнение
       vim.opt.completeopt = { "menu", "menuone", "noselect" }
       -- ✅ НАСТРОЙКА ПУТЕЙ ДЛЯ АВТОДОПОЛНЕНИЯ
-      vim.opt.path = {
-        ".",                    -- текущая папка
-        "src/**",               -- рекурсивно в src
-        "**",                   -- рекурсивно везде
-      }
+      -- vim.opt.path = {
+      --   ".",                   -- текущая папка
+      --   "client/**",            -- рекурсивно в client
+      --   "src/**",
+      --   "**",                   -- рекурсивно везде
+      -- }
 
       vim.opt.wildignore = {
         "*/node_modules/*",
@@ -151,6 +152,7 @@ end, { expr = true, desc = "Smart completion" })
               importModuleSpecifierPreference = "relative",  -- ← ВАЖНО!
               importModuleSpecifierEnding = "minimal",
               quotePreference = "single",  -- использовать одинарные кавычки
+              includeInlayFunctionParameterTypeHints = true,
             },
           },
         },
