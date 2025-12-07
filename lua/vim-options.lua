@@ -1,15 +1,19 @@
 -- Basic editor settings
-vim.opt.expandtab = true -- Convert tabs to spaces
-vim.opt.tabstop = 2 -- Number of spaces a tab counts for
-vim.opt.softtabstop = 2 -- Number of spaces for a tab while editing
-vim.opt.shiftwidth = 2 -- Number of spaces for each indentation level
-vim.opt.modifiable = true -- Allow buffer to be modified
-vim.opt.number = true -- Show line numbers
+vim.opt.expandtab = true      -- Convert tabs to spaces
+vim.opt.tabstop = 2           -- Number of spaces a tab counts for
+vim.opt.softtabstop = 2       -- Number of spaces for a tab while editing
+vim.opt.shiftwidth = 2        -- Number of spaces for each indentation level
+vim.opt.modifiable = true     -- Allow buffer to be modified
+vim.opt.number = true         -- Show line numbers
 vim.opt.relativenumber = true -- Show relative line numbers for easier navigation
-vim.opt.scrolloff = 8 -- Keep 8 lines visible above/below cursor when scrolling
-vim.opt.smartindent = true -- Smart auto-indenting
-vim.opt.syntax = "on" -- Enable syntax highlighting
-vim.o.termguicolors = true -- Enable true color support
+vim.opt.scrolloff = 8         -- Keep 8 lines visible above/below cursor when scrolling
+vim.opt.smartindent = true    -- Smart auto-indenting
+vim.opt.syntax = "on"         -- Enable syntax highlighting
+vim.o.termguicolors = true    -- Enable true color support
+
+-- Force UTF-8
+vim.opt.encoding = "utf-8"
+vim.opt.fileencoding = "utf-8"
 
 -- Set space as the leader key
 vim.g.mapleader = " "
@@ -21,7 +25,7 @@ vim.opt.clipboard = "unnamedplus" -- Use system clipboard
 -- vim.cmd("colorscheme desert")      -- Set color scheme to desert
 
 -- Spell checking
-vim.opt.spell = true -- Enable spell checking
+vim.opt.spell = true                     -- Enable spell checking
 vim.opt.spelllang = { "en_us", "ru_ru" } -- Set spell check languages to English and Russian
 
 -- Keymaps for window navigation
@@ -51,13 +55,15 @@ vim.cmd('filetype plugin indent on')
 
 vim.opt.termguicolors = true
 vim.cmd('colorscheme habamax')
+-- Убираем жирный фон у границы и делаем его прозрачным
+vim.api.nvim_set_hl(0, "FloatBorder", { link = "Normal" })
 vim.opt.cursorline = true
 
 vim.opt.foldmethod = "indent" -- Метод фолдинга: сворачивание по отступам
-vim.opt.foldnestmax = 10 -- Максимальная глубина вложенности фолдов
-vim.opt.foldenable = true -- Включить фолдинг (возможность сворачивать код)
-vim.opt.foldlevel = 15 -- Уровень фолдинга: блоки с отступом больше 15 будут свёрнуты
-vim.opt.foldlevelstart = 15 -- Начальный уровень при открытии файла (блоки с отступом >2 будут свёрнуты)
+vim.opt.foldnestmax = 10      -- Максимальная глубина вложенности фолдов
+vim.opt.foldenable = true     -- Включить фолдинг (возможность сворачивать код)
+vim.opt.foldlevel = 15        -- Уровень фолдинга: блоки с отступом больше 15 будут свёрнуты
+vim.opt.foldlevelstart = 15   -- Начальный уровень при открытии файла (блоки с отступом >2 будут свёрнуты)
 -- Команды:
 -- zc - закрыть фолд под курсором
 -- zo - открыть фолд под курсором

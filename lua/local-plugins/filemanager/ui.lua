@@ -9,22 +9,22 @@ function M.render()
   if not state.buf or not api.nvim_buf_is_valid(state.buf) then
     return
   end
-  
+
   api.nvim_buf_set_option(state.buf, 'modifiable', true)
-  
+
   local lines = {}
   table.insert(lines, "📁 " .. state.current_path)
   table.insert(lines, "")
   table.insert(lines, "..  [родительская папка]")
-  
+
   local files = fs.get_files(state.current_path)
   state.files = files
-  
+
   for _, file in ipairs(files) do
     local icon = file.type == 'directory' and '📁' or '📄'
     table.insert(lines, icon .. ' ' .. file.name)
   end
-  
+
   api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
   api.nvim_buf_set_option(state.buf, 'modifiable', false)
   api.nvim_buf_set_option(state.buf, 'modified', false)
@@ -36,7 +36,7 @@ function M.create_window()
   api.nvim_buf_set_option(state.buf, 'bufhidden', 'wipe')
   api.nvim_buf_set_option(state.buf, 'buftype', 'nofile')
   api.nvim_buf_set_name(state.buf, 'FileManager')
-  
+
   state.win = api.nvim_open_win(state.buf, true, {
     relative = 'editor',
     width = math.floor(vim.o.columns * 0.8),
@@ -46,7 +46,7 @@ function M.create_window()
     style = 'minimal',
     border = 'rounded'
   })
-  
+
   M.setup_highlights()
 end
 
@@ -55,7 +55,7 @@ function M.setup_highlights()
   vim.cmd([[
     syn match FMDir "📁.*"
     syn match FMFile "📄.*"
-    syn match FMPath "^📁 /.*" 
+    syn match FMPath "^📁 /.*"
     hi def link FMDir Directory
     hi def link FMFile Normal
     hi def link FMPath Comment

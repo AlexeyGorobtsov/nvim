@@ -7,9 +7,9 @@ return {
       vim.opt.completeopt = { "menu", "menuone", "noselect" }
       -- ✅ НАСТРОЙКА ПУТЕЙ ДЛЯ АВТОДОПОЛНЕНИЯ
       vim.opt.path = {
-        ".",                    -- текущая папка
-        "src/**",               -- рекурсивно в src
-        "**",                   -- рекурсивно везде
+        ".",      -- текущая папка
+        "src/**", -- рекурсивно в src
+        "**",     -- рекурсивно везде
       }
 
       vim.opt.wildignore = {
@@ -21,70 +21,70 @@ return {
         "*.o",
         "*.obj",
       }
-  
+
       vim.opt.suffixesadd = { ".js", ".jsx", ".ts", ".tsx", ".json" }
       -- ==========================================
--- АВТОДОПОЛНЕНИЕ ДЛЯ macOS
--- ==========================================
+      -- АВТОДОПОЛНЕНИЕ ДЛЯ macOS
+      -- ==========================================
 
--- Omnifunc для LSP
-vim.opt.omnifunc = "v:lua.vim.lsp.omnifunc"
+      -- Omnifunc для LSP
+      vim.opt.omnifunc = "v:lua.vim.lsp.omnifunc"
 
--- Автодополнение по Tab (как раньше)
-vim.keymap.set("i", "<Tab>", function()
-  if vim.fn.pumvisible() == 1 then
-    return "<C-n>"
-  else
-    return "<Tab>"
-  end
-end, { expr = true })
+      -- Автодополнение по Tab (как раньше)
+      vim.keymap.set("i", "<Tab>", function()
+        if vim.fn.pumvisible() == 1 then
+          return "<C-n>"
+        else
+          return "<Tab>"
+        end
+      end, { expr = true })
 
-vim.keymap.set("i", "<S-Tab>", function()
-  if vim.fn.pumvisible() == 1 then
-    return "<C-p>"
-  else
-    return "<S-Tab>"
-  end
-end, { expr = true })
+      vim.keymap.set("i", "<S-Tab>", function()
+        if vim.fn.pumvisible() == 1 then
+          return "<C-p>"
+        else
+          return "<S-Tab>"
+        end
+      end, { expr = true })
 
--- Подтверждение через Enter (как раньше)
-vim.keymap.set("i", "<CR>", function()
-  if vim.fn.pumvisible() == 1 then
-    return "<C-y>"
-  else
-    return "<CR>"
-  end
-end, { expr = true })
+      -- Подтверждение через Enter (как раньше)
+      vim.keymap.set("i", "<CR>", function()
+        if vim.fn.pumvisible() == 1 then
+          return "<C-y>"
+        else
+          return "<CR>"
+        end
+      end, { expr = true })
 
--- ✅ НОВЫЕ МАППИНГИ ДЛЯ LSP (без Ctrl+Space)
+      -- ✅ НОВЫЕ МАППИНГИ ДЛЯ LSP (без Ctrl+Space)
 
--- Ctrl+l - LSP автодополнение (ОСНОВНОЙ)
-vim.keymap.set("i", "<C-l>", "<C-x><C-o>", { desc = "LSP completion" })
+      -- Ctrl+l - LSP автодополнение (ОСНОВНОЙ)
+      vim.keymap.set("i", "<C-l>", "<C-x><C-o>", { desc = "LSP completion" })
 
--- Ctrl+k - Параметры функции (как в вашей конфигурации)
--- Это НЕ будет конфликтовать
+      -- Ctrl+k - Параметры функции (как в вашей конфигурации)
+      -- Это НЕ будет конфликтовать
 
--- Alt/Option+Space - альтернатива
-vim.keymap.set("i", "<M-Space>", "<C-x><C-o>", { desc = "LSP completion" })
+      -- Alt/Option+Space - альтернатива
+      vim.keymap.set("i", "<M-Space>", "<C-x><C-o>", { desc = "LSP completion" })
 
--- Ctrl+f - автодополнение путей файлов
-vim.keymap.set("i", "<C-f>", "<C-x><C-f>", { desc = "File path completion" })
+      -- Ctrl+f - автодополнение путей файлов
+      vim.keymap.set("i", "<C-f>", "<C-x><C-f>", { desc = "File path completion" })
 
--- Ctrl+n - умное автодополнение
-vim.keymap.set("i", "<C-n>", function()
-  if vim.fn.pumvisible() == 1 then
-    return "<C-n>"
-  else
-    local line = vim.api.nvim_get_current_line()
-    local before_cursor = line:sub(1, vim.api.nvim_win_get_cursor(0)[2])
-    
-    if before_cursor:match("from%s+['\"]") or before_cursor:match("import.*['\"]") then
-      return "<C-x><C-o>"  -- LSP для импортов
-    else
-      return "<C-n>"  -- обычное
-    end
-  end
-end, { expr = true, desc = "Smart completion" })
+      -- Ctrl+n - умное автодополнение
+      vim.keymap.set("i", "<C-n>", function()
+        if vim.fn.pumvisible() == 1 then
+          return "<C-n>"
+        else
+          local line = vim.api.nvim_get_current_line()
+          local before_cursor = line:sub(1, vim.api.nvim_win_get_cursor(0)[2])
+
+          if before_cursor:match("from%s+['\"]") or before_cursor:match("import.*['\"]") then
+            return "<C-x><C-o>" -- LSP для импортов
+          else
+            return "<C-n>" -- обычное
+          end
+        end
+      end, { expr = true, desc = "Smart completion" })
       -- Автодополнение по <Tab>
       vim.keymap.set("i", "<Tab>", function()
         if vim.fn.pumvisible() == 1 then
@@ -93,7 +93,7 @@ end, { expr = true, desc = "Smart completion" })
           return "<Tab>"
         end
       end, { expr = true })
-      
+
       vim.keymap.set("i", "<S-Tab>", function()
         if vim.fn.pumvisible() == 1 then
           return "<C-p>"
@@ -135,7 +135,7 @@ end, { expr = true, desc = "Smart completion" })
             preferences = {
               includePackageJsonAutoImports = "on",
               importModuleSpecifierPreference = "relative",
-              importModuleSpecifierEnding = "minimal",  -- без .js
+              importModuleSpecifierEnding = "minimal", -- без .js
             },
           },
           javascript = {
@@ -148,9 +148,9 @@ end, { expr = true, desc = "Smart completion" })
             },
             preferences = {
               includePackageJsonAutoImports = "on",
-              importModuleSpecifierPreference = "relative",  -- ← ВАЖНО!
+              importModuleSpecifierPreference = "relative", -- ← ВАЖНО!
               importModuleSpecifierEnding = "minimal",
-              quotePreference = "single",  -- использовать одинарные кавычки
+              quotePreference = "single",                   -- использовать одинарные кавычки
             },
           },
         },
@@ -165,22 +165,22 @@ end, { expr = true, desc = "Smart completion" })
       -- ESLint LSP
       vim.lsp.config.eslint = {
         cmd = { "vscode-eslint-language-server", "--stdio" },
-        filetypes = { 
-          "javascript", 
-          "javascriptreact", 
-          "typescript", 
-          "typescriptreact", 
-          "vue", 
-          "svelte" 
+        filetypes = {
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact",
+          "vue",
+          "svelte"
         },
-        root_markers = { 
+        root_markers = {
           "eslint.config.js",
           "eslint.config.mjs",
           "eslint.config.cjs",
-          ".eslintrc.js", 
-          ".eslintrc.json", 
-          "package.json", 
-          ".git" 
+          ".eslintrc.js",
+          ".eslintrc.json",
+          "package.json",
+          ".git"
         },
         settings = {
           validate = "on",
@@ -251,7 +251,7 @@ end, { expr = true, desc = "Smart completion" })
             vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
           end
 
-                    -- Организовать импорты (добавить недостающие)
+          -- Организовать импорты (добавить недостающие)
           map("n", "<leader>oi", function()
             vim.lsp.buf.code_action({
               apply = true,
@@ -307,12 +307,12 @@ end, { expr = true, desc = "Smart completion" })
                LSP Горячие клавиши
       ═══════════════════════════════════════
       ⚡ АВТОДОПОЛНЕНИЕ (в режиме вставки):
-        
+
         Ctrl+l      - LSP автодополнение ⭐⭐⭐
         Ctrl+f      - файлы и папки
         Ctrl+n      - умное (LSP или обычное)
         Option+Space - LSP (альтернатива)
-        
+
         Tab         - следующий вариант
         Shift+Tab   - предыдущий
         Enter       - выбрать

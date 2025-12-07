@@ -25,7 +25,7 @@ function M.setup(buf)
   vim.keymap.set({ 'n', 'v' }, 'yp', clipboard.yank_path, opts)
 
   -- Создание
-  vim.keymap.set('n', 'a', actions.create_file, opts)
+  vim.keymap.set('n', 'a', actions.create, opts)
   vim.keymap.set('n', 'A', actions.create_dir, opts)
 
   -- Другое
