@@ -20,6 +20,7 @@ return {
 
     keys = {
       { "<C-p>",      function() require("local-plugins.simple-finder").find_files() end,       desc = "Find Files" },
+      { "<leader>fp", function() require("local-plugins.simple-finder").find_path() end,       desc = "Find Path" },
       { "<leader>ff", function() require("local-plugins.simple-finder").find_files() end,       desc = "Find Files" },
       { "<leader>fd", function() require("local-plugins.simple-finder").find_directories() end, desc = "Find Dirs" },
       { "<leader>fb", function() require("local-plugins.simple-finder").find_buffers() end,     desc = "Buffers" },

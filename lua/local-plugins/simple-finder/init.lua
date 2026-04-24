@@ -278,6 +278,89 @@ M.live_grep = function()
   end)
 end
 
+-- 🔍 Поиск по пути (как telescope find_files, но в quickfix)
+-- Ввод: src/pages/verif → найдёт все совпадения
+M.find_path = function()
+  vim.ui.input({ prompt = "📍 Путь: " }, function(pattern)
+    if not pattern or pattern == "" then return end
+
+    -- Извлекаем номер строки если есть (file.jsx:30 или file.jsx 30:0)
+    local line_num = nil
+    local clean_pattern = pattern
+
+    -- Формат: file.jsx:30:5 или file.jsx:30
+    local path_part, line_part = pattern:match("^(.+):(%d+)")
+    if path_part then
+      clean_pattern = path_part
+      line_num = tonumber(line_part)
+    else
+      -- Формат webpack: file.jsx 30:0-20
+      path_part, line_part = pattern:match("^(.+)%s+(%d+):")
+      if path_part then
+        clean_pattern = path_part
+        line_num = tonumber(line_part)
+      end
+    end
+
+    -- Убираем ./ в начале
+    clean_pattern = clean_pattern:gsub("^%./", "")
+
+    -- Экранируем для grep
+    local grep_pattern = clean_pattern:gsub("([%.%[%]%(%)%+%-%*%?%^%$])", "\\%1")
+
+    local excludes = get_find_excludes()
+    local cmd = string.format(
+      "find . -type f %s 2>/dev/null | grep -i %s | head -n 100",
+      excludes,
+      vim.fn.shellescape(grep_pattern)
+    )
+
+    vim.fn.jobstart(cmd, {
+      stdout_buffered = true,
+      on_stdout = function(_, data)
+        if data and #data > 1 then
+          local files = vim.tbl_filter(function(line)
+            return line ~= ""
+          end, data)
+
+          if #files == 0 then
+            vim.notify("❌ Файлы не найдены: " .. clean_pattern, vim.log.levels.WARN)
+            return
+          end
+
+          -- Если ровно 1 файл — сразу открываем
+          if #files == 1 then
+            vim.cmd('edit ' .. vim.fn.fnameescape(files[1]))
+            if line_num then
+              vim.api.nvim_win_set_cursor(0, { line_num, 0 })
+              vim.cmd('normal! zz')
+            end
+            vim.notify("📍 " .. files[1] .. (line_num and ":" .. line_num or ""), vim.log.levels.INFO)
+            return
+          end
+
+          -- Иначе → quickfix
+          local qf_list = {}
+          for _, file in ipairs(files) do
+            table.insert(qf_list, {
+              filename = file,
+              lnum = line_num or 1,
+              col = 1,
+              text = file,
+            })
+          end
+
+          vim.fn.setqflist(qf_list, 'r')
+          vim.cmd('copen')
+          vim.notify(string.format("✓ Найдено: %d", #files), vim.log.levels.INFO)
+        else
+          vim.notify("❌ Файлы не найдены", vim.log.levels.WARN)
+        end
+      end,
+    })
+  end)
+end
+
 -- ℹ️ Проверка
 M.check = function()
   print("✓ Simple Finder")
