@@ -7,20 +7,18 @@ local EXCLUDE_DIRS = {
   "vendor", "coverage", ".DS_Store", "tmp", "temp",
 }
 
-local function get_find_excludes()
-  local excludes = {}
-  for _, dir in ipairs(EXCLUDE_DIRS) do
-    table.insert(excludes, "! -path '*/" .. dir .. "/*'")
-  end
-  return table.concat(excludes, " ")
-end
-
-local function get_grep_excludes()
+local function get_rg_excludes()
   local parts = {}
   for _, dir in ipairs(EXCLUDE_DIRS) do
-    table.insert(parts, "--exclude-dir=" .. dir)
+    table.insert(parts, "--glob '!" .. dir .. "/**'")
+    table.insert(parts, "--glob '!" .. dir .. "'")
   end
   return table.concat(parts, " ")
+end
+
+-- Базовые флаги rg: уважаем .gitignore, скрытые включены, но .git исключён, smart-case
+local function rg_base()
+  return "rg --hidden --smart-case " .. get_rg_excludes()
 end
 
 -- 🔍 Поиск файлов (интерактивный)
@@ -28,11 +26,10 @@ M.find_files = function()
   vim.ui.input({ prompt = "🔍 Найти файл (glob): ", default = "*" }, function(pattern)
     if not pattern or pattern == "" then return end
 
-    local excludes = get_find_excludes()
     local cmd = string.format(
-      "find . -type f -iname %s %s 2>/dev/null | head -n 500",
-      vim.fn.shellescape("*" .. pattern .. "*"),
-      excludes
+      "%s --files --iglob %s 2>/dev/null | head -n 500",
+      rg_base(),
+      vim.fn.shellescape("*" .. pattern .. "*")
     )
 
     vim.fn.jobstart(cmd, {
@@ -48,7 +45,6 @@ M.find_files = function()
             return
           end
 
-          -- Формируем список для quickfix
           local qf_list = {}
           for _, file in ipairs(files) do
             table.insert(qf_list, {
@@ -71,18 +67,18 @@ M.find_files = function()
 end
 
 -- 📁 Поиск директорий (интерактивный)
+-- rg не ищет директории напрямую — получаем список файлов и извлекаем уникальные директории
 M.find_directories = function()
   vim.ui.input({ prompt = "📁 Найти папку: ", default = "" }, function(pattern)
     if not pattern or pattern == "" then return end
 
-    local excludes = get_find_excludes()
     local cmd = string.format(
-      "find . -type d -iname %s %s 2>/dev/null | head -n 200",
-      vim.fn.shellescape("*" .. pattern .. "*"),
-      excludes
+      "%s --files --null 2>/dev/null | xargs -0 -n1 dirname | sort -u | grep -i %s | head -n 200",
+      rg_base(),
+      vim.fn.shellescape(pattern)
     )
 
-    vim.fn.jobstart(cmd, {
+    vim.fn.jobstart({ "sh", "-c", cmd }, {
       stdout_buffered = true,
       on_stdout = function(_, data)
         if data and #data > 1 then
@@ -205,7 +201,7 @@ M.recent_files = function()
   end)
 end
 
--- 🔀 Git файлы (с фильтром)
+-- 🔀 Git файлы (с фильтром через rg)
 M.git_files = function()
   if vim.fn.isdirectory('.git') == 0 then
     vim.notify("❌ Not a git repository", vim.log.levels.ERROR)
@@ -215,12 +211,14 @@ M.git_files = function()
   vim.ui.input({ prompt = "🔀 Фильтр git файлов: ", default = "" }, function(pattern)
     if not pattern then return end
 
-    local cmd = "git ls-files"
-    if pattern ~= "" then
-      cmd = cmd .. " | grep -i " .. vim.fn.shellescape(pattern)
+    local cmd
+    if pattern == "" then
+      cmd = "git ls-files"
+    else
+      cmd = "git ls-files | rg --smart-case " .. vim.fn.shellescape(pattern)
     end
 
-    vim.fn.jobstart(cmd, {
+    vim.fn.jobstart({ "sh", "-c", cmd }, {
       stdout_buffered = true,
       on_stdout = function(_, data)
         if data and #data > 1 then
@@ -253,16 +251,14 @@ M.git_files = function()
   end)
 end
 
--- 🔎 Grep
+-- 🔎 Grep через rg (не-live, по Enter)
 M.live_grep = function()
-  local excludes = get_grep_excludes()
-
   vim.ui.input({ prompt = "🔎 Grep: " }, function(pattern)
     if not pattern or pattern == "" then return end
 
     local cmd = string.format(
-      "grep -rn -I %s -e %s . 2>/dev/null",
-      excludes,
+      "%s --vimgrep --no-heading -- %s 2>/dev/null",
+      rg_base(),
       vim.fn.shellescape(pattern)
     )
 
@@ -278,23 +274,19 @@ M.live_grep = function()
   end)
 end
 
--- 🔍 Поиск по пути (как telescope find_files, но в quickfix)
--- Ввод: src/pages/verif → найдёт все совпадения
+-- 🔍 Поиск по пути
 M.find_path = function()
   vim.ui.input({ prompt = "📍 Путь: " }, function(pattern)
     if not pattern or pattern == "" then return end
 
-    -- Извлекаем номер строки если есть (file.jsx:30 или file.jsx 30:0)
     local line_num = nil
     local clean_pattern = pattern
 
-    -- Формат: file.jsx:30:5 или file.jsx:30
     local path_part, line_part = pattern:match("^(.+):(%d+)")
     if path_part then
       clean_pattern = path_part
       line_num = tonumber(line_part)
     else
-      -- Формат webpack: file.jsx 30:0-20
       path_part, line_part = pattern:match("^(.+)%s+(%d+):")
       if path_part then
         clean_pattern = path_part
@@ -302,20 +294,16 @@ M.find_path = function()
       end
     end
 
-    -- Убираем ./ в начале
     clean_pattern = clean_pattern:gsub("^%./", "")
 
-    -- Экранируем для grep
-    local grep_pattern = clean_pattern:gsub("([%.%[%]%(%)%+%-%*%?%^%$])", "\\%1")
-
-    local excludes = get_find_excludes()
+    -- rg --files + фильтрация через rg по подстроке пути
     local cmd = string.format(
-      "find . -type f %s 2>/dev/null | grep -i %s | head -n 100",
-      excludes,
-      vim.fn.shellescape(grep_pattern)
+      "%s --files 2>/dev/null | rg --smart-case %s | head -n 100",
+      rg_base(),
+      vim.fn.shellescape(clean_pattern)
     )
 
-    vim.fn.jobstart(cmd, {
+    vim.fn.jobstart({ "sh", "-c", cmd }, {
       stdout_buffered = true,
       on_stdout = function(_, data)
         if data and #data > 1 then
@@ -328,7 +316,6 @@ M.find_path = function()
             return
           end
 
-          -- Если ровно 1 файл — сразу открываем
           if #files == 1 then
             vim.cmd('edit ' .. vim.fn.fnameescape(files[1]))
             if line_num then
@@ -339,7 +326,6 @@ M.find_path = function()
             return
           end
 
-          -- Иначе → quickfix
           local qf_list = {}
           for _, file in ipairs(files) do
             table.insert(qf_list, {
@@ -363,14 +349,19 @@ end
 
 -- ℹ️ Проверка
 M.check = function()
-  print("✓ Simple Finder")
+  print("✓ Simple Finder (rg)")
   print("📁 Excluded: " .. table.concat(EXCLUDE_DIRS, ", "))
+  if vim.fn.executable('rg') == 0 then
+    print("⚠️  ripgrep (rg) не установлен!")
+  else
+    print("✓ ripgrep найден: " .. vim.fn.exepath('rg'))
+  end
 end
 
 M.show_help = function()
   local help = {
     "╔══════════════════════════════════════════════════╗",
-    "║      🔍 Simple Finder - Горячие клавиши          ║",
+    "║      🔍 Simple Finder (rg) - Горячие клавиши     ║",
     "╚══════════════════════════════════════════════════╝",
     "",
     "📁 Поиск (через Quickfix):",
@@ -392,7 +383,8 @@ M.show_help = function()
     "  :cnext / :cp  следующий/предыдущий",
     "  :copen      открыть список",
     "  :cclose     закрыть список",
-    "  :cexp []     очистить список",
+    "",
+    "⚙️  rg: --hidden --smart-case + .gitignore + EXCLUDE_DIRS",
     "",
     "❓ Помощь: <leader>f?",
   }
@@ -403,7 +395,7 @@ M.show_help = function()
 
   local width = 54
   local height = #help
-  local win = vim.api.nvim_open_win(buf, true, {
+  vim.api.nvim_open_win(buf, true, {
     relative = 'editor',
     width = width,
     height = height,
@@ -416,6 +408,5 @@ M.show_help = function()
   vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf })
   vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf })
 end
-
 
 return M
