@@ -22,11 +22,25 @@ vim.g.mapleader = " "
 vim.opt.clipboard = "unnamedplus" -- Use system clipboard
 
 -- Color scheme
--- vim.cmd("colorscheme desert")      -- Set color scheme to desert
+vim.cmd('colorscheme catppuccin')
+
 
 -- Spell checking
 vim.opt.spell = true                     -- Enable spell checking
 vim.opt.spelllang = { "en_us", "ru_ru" } -- Set spell check languages to English and Russian
+
+
+-- Устанавливаем встроенную русскую раскладку (для Windows/Linux используйте russian-jcukenwin)
+-- Для macOS можно использовать russian-jcukenmac
+vim.opt.keymap = "russian-jcukenwin"
+
+-- По умолчанию при старте включаем английский ввод
+vim.opt.iminsert = 0
+vim.opt.imsearch = 0
+-- Настраиваем стандартную статусную строку без плагинов
+-- %f - имя файла, %m - изменен ли, %= - разделитель, %k - имя раскладки, %l/%c - строка/колонка
+vim.opt.statusline = "%f %m %= %k %l:%c"
+vim.keymap.set("i", "jj", "<C-^>", { desc = "Toggle Russian layout" })
 
 -- Keymaps for window navigation
 vim.keymap.set("n", "<c-k>", ":wincmd k<CR>", { desc = "Move to window above" })
@@ -53,8 +67,6 @@ vim.o.mouse = ""
 vim.cmd('syntax on')
 vim.cmd('filetype plugin indent on')
 
-vim.opt.termguicolors = true
-vim.cmd('colorscheme habamax')
 -- Убираем жирный фон у границы и делаем его прозрачным
 vim.api.nvim_set_hl(0, "FloatBorder", { link = "Normal" })
 vim.opt.cursorline = true
