@@ -2,8 +2,8 @@ local M = {}
 
 local config = {
   api_key = nil,
-  model = "claude-fable-5",
-  -- model = "claude-opus-4-8",
+  -- model = "claude-fable-5",
+  model = "claude-opus-4-8",
   max_tokens = 40000,
   timeout = 120,
   store_dir = vim.fn.stdpath("data") .. "/claude_batches",
@@ -218,13 +218,19 @@ local function fetch_results(meta, results_url)
             end
           end
         elseif obj.result.error then
-          table.insert(lines, "Ошибка: " .. vim.inspect(obj.result.error))
+          vim.list_extend(lines, vim.split("Ошибка: " .. vim.inspect(obj.result.error), "\n"))
         end
       end
     end
     if #lines == 0 then lines = { "Пустой результат" } end
-    append_history(meta, table.concat(lines, "\n"))
-    open_result_win(lines, meta.label)
+
+    local flat = {}
+    for _, l in ipairs(lines) do
+      vim.list_extend(flat, vim.split(l, "\n", { plain = true }))
+    end
+
+    append_history(meta, table.concat(flat, "\n"))
+    open_result_win(flat, meta.label)
     delete_batch(meta.id)
   end)
 end
