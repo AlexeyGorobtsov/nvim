@@ -23,6 +23,10 @@ vim.opt.clipboard = "unnamedplus" -- Use system clipboard
 
 -- Color scheme
 vim.cmd('colorscheme catppuccin')
+vim.env.TERM = "xterm-256color"
+vim.opt.termguicolors = true
+vim.env.COLORTERM = "truecolor"
+
 
 
 -- Spell checking

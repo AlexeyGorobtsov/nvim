@@ -2,7 +2,10 @@ local M = {}
 
 local config = {
   api_key = nil,
-  -- model = "claude-fable-5",
+  provider = "anthropic", -- "anthropic" | "proxy"
+  base_url = "https://api.anthropic.com",
+  proxy_url = "https://withered-glade-1108.lexa042987.workers.dev",
+  proxy_key = nil,
   model = "claude-opus-4-8",
   max_tokens = 40000,
   timeout = 120,
@@ -22,7 +25,19 @@ local config = {
 
 local cached_key
 
+local function api_base()
+  if config.provider == "proxy" then
+    return (config.proxy_url):gsub("/+$", "")
+  end
+  return (config.base_url):gsub("/+$", "")
+end
+
 local function resolve_api_key()
+  if config.provider == "proxy" then
+    local k = config.proxy_key or vim.env.CLAUDE_PROXY_KEY
+    if k and k ~= "" then return k end
+    return nil
+  end
   if cached_key then return cached_key end
   local key = config.api_key or vim.env.ANTHROPIC_API_KEY
   if key and key ~= "" then
@@ -43,6 +58,14 @@ local function resolve_api_key()
   return nil
 end
 
+local function auth_header(key)
+  if config.provider == "proxy" then
+    return "x-proxy-key: " .. key
+  end
+  return "x-api-key: " .. key
+end
+
+
 local function decode(raw)
   local ok, res = pcall(vim.json.decode, raw)
   return ok and res or nil
@@ -51,12 +74,20 @@ end
 local function request(opts, cb)
   local key = resolve_api_key()
   if not key then
-    vim.notify("ANTHROPIC_API_KEY не установлен", vim.log.levels.ERROR)
+    local var = config.provider == "proxy" and "proxy_key / CLAUDE_PROXY_KEY" or "ANTHROPIC_API_KEY"
+    vim.notify(var .. " не установлен", vim.log.levels.ERROR)
     return
   end
+
+  local url = opts.url
+  if config.provider == "proxy" then
+    local path = url:match("https?://[^/]+(/.+)")
+    if path then url = api_base() .. path end
+  end
+
   local cmd = {
     "curl", "-sS", "--max-time", tostring(config.timeout),
-    "-H", "x-api-key: " .. key,
+    "-H", auth_header(key),
     "-H", "anthropic-version: 2023-06-01",
     "-H", "content-type: application/json",
   }
@@ -72,7 +103,7 @@ local function request(opts, cb)
     f:close()
     vim.list_extend(cmd, { "-d", "@" .. tmp })
   end
-  table.insert(cmd, opts.url)
+  table.insert(cmd, url)
   local out, err = {}, {}
   vim.fn.jobstart(cmd, {
     stdout_buffered = true,
@@ -89,6 +120,7 @@ local function request(opts, cb)
     end,
   })
 end
+
 
 local function ensure_store()
   vim.fn.mkdir(config.store_dir, "p")
@@ -114,10 +146,10 @@ local function append_history(meta, answer)
     "----------",
     os.date("%d.%m.%Y %H:%M", meta.created or os.time()),
     "",
-    "## Вопрос",
+    "## request",
     meta.prompt or meta.label or "",
     "",
-    "## Ответ",
+    "## response",
     answer,
     "", "",
   }, "\n"))
@@ -149,11 +181,15 @@ local function open_float(buf, title)
   local width = math.min(math.floor(vim.o.columns * 0.75), 120)
   local height = math.floor(vim.o.lines * 0.6)
   return vim.api.nvim_open_win(buf, true, {
-    relative = "editor", width = width, height = height,
+    relative = "editor",
+    width = width,
+    height = height,
     col = math.floor((vim.o.columns - width) / 2),
     row = math.floor((vim.o.lines - height) / 2),
-    style = "minimal", border = "rounded",
-    title = title, title_pos = "center",
+    style = "minimal",
+    border = "rounded",
+    title = title,
+    title_pos = "center",
   })
 end
 
@@ -187,7 +223,7 @@ function M.submit(prompt, label)
       },
     },
   })
-  request({ url = "https://api.anthropic.com/v1/messages/batches", body = body },
+  request({ url = api_base() .. "/v1/messages/batches", body = body },
     function(raw)
       local res = decode(raw)
       if not res or res.type == "error" or not res.id then
@@ -207,6 +243,11 @@ end
 
 local function fetch_results(meta, results_url)
   request({ url = results_url }, function(raw)
+    local maybe_err = decode(raw)
+    if maybe_err and maybe_err.type == "error" then
+      vim.notify("Ошибка результата: " .. vim.inspect(maybe_err.error), vim.log.levels.ERROR)
+      return
+    end
     local lines = {}
     for _, line in ipairs(vim.split(raw, "\n", { trimempty = true })) do
       local obj = decode(line)
@@ -236,7 +277,7 @@ local function fetch_results(meta, results_url)
 end
 
 local function check_batch(meta, silent)
-  request({ url = "https://api.anthropic.com/v1/messages/batches/" .. meta.id },
+  request({ url = api_base() .. "/v1/messages/batches/" .. meta.id },
     function(raw)
       local res = decode(raw)
       if not res then return end
@@ -323,12 +364,16 @@ function M.ask_with_editor(opts)
   local height = 8
   local ctx_info = context ~= ""
       and (" [+%d строк контекста]"):format(#vim.split(context, "\n")) or ""
+  local mode_info = config.provider == "proxy" and " [proxy]" or " [direct]"
   local win = vim.api.nvim_open_win(buf, true, {
-    relative = "editor", width = width, height = height,
+    relative = "editor",
+    width = width,
+    height = height,
     col = math.floor((vim.o.columns - width) / 2),
     row = math.floor((vim.o.lines - height) / 2),
-    style = "minimal", border = "rounded",
-    title = " Claude" .. ctx_info .. " ",
+    style = "minimal",
+    border = "rounded",
+    title = " Claude" .. ctx_info .. mode_info .. " ",
     title_pos = "center",
     footer = " <C-s>/<C-CR> отправить · <Esc><Esc>/q отмена ",
     footer_pos = "center",
@@ -360,9 +405,24 @@ function M.ask_with_editor(opts)
   vim.keymap.set("n", "<Esc>", close, { buffer = buf, silent = true })
 end
 
+-- Функция для быстрой смены модели на лету
+function M.set_model(model_name)
+  local models = {
+    haiku = "claude-haiku-4-5-20251001",
+    opus = "claude-opus-4-8",
+    fable = "claude-fable-5",
+    sonnet = "claude-sonnet-4-6",
+  }
+
+  local target_model = models[model_name] or model_name
+  config.model = target_model
+  vim.notify("Переключено на модель: " .. target_model, vim.log.levels.INFO)
+end
+
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
 
+  -- Команды для работы с батчами
   vim.api.nvim_create_user_command("ClaudeBatch", function(o)
     M.ask_with_editor({ visual = o.range > 0 })
   end, { range = true })
@@ -371,11 +431,27 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("ClaudeBatchList", M.list, {})
   vim.api.nvim_create_user_command("ClaudeBatchHistory", M.history, {})
 
+  -- Команда для динамической смены модели на лету
+  vim.api.nvim_create_user_command("ClaudeModel", function(o)
+    M.set_model(o.args)
+  end, {
+    nargs = 1,
+    complete = function() return { "haiku", "opus", "fable", "sonnet" } end, -- автодополнение по Tab
+  })
+
+  -- Хоткеи для работы с батчами
   vim.keymap.set("n", "<leader>bi", "<cmd>ClaudeBatch<cr>", { desc = "Claude batch ask" })
   vim.keymap.set("v", "<leader>bi", ":<C-u>ClaudeBatch<cr>", { desc = "Claude batch ask with selection" })
   vim.keymap.set("n", "<leader>bp", "<cmd>ClaudeBatchPoll<cr>", { desc = "Claude batch poll" })
   vim.keymap.set("n", "<leader>bl", "<cmd>ClaudeBatchList<cr>", { desc = "Claude batch list" })
   vim.keymap.set("n", "<leader>bh", "<cmd>ClaudeBatchHistory<cr>", { desc = "Claude batch history" })
+
+  -- Хоткеи для мгновенной смены модели на лету
+  vim.keymap.set("n", "<leader>bmh", function() M.set_model("haiku") end, { desc = "Claude: Switch to Haiku" })
+  vim.keymap.set("n", "<leader>bmo", function() M.set_model("opus") end, { desc = "Claude: Switch to Opus" })
+  vim.keymap.set("n", "<leader>bms", function() M.set_model("sonnet") end, { desc = "Claude: Switch to Sonnet" })
+  vim.keymap.set("n", "<leader>bmo", function() M.set_model("opus") end, { desc = "Claude: Switch to Opus" })
+  vim.keymap.set("n", "<leader>bmf", function() M.set_model("fable") end, { desc = "Claude: Switch to Fable" })
 end
 
 return M
