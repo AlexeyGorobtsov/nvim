@@ -7,7 +7,12 @@ local config = {
   proxy_url = "https://withered-glade-1108.lexa042987.workers.dev",
   proxy_key = nil,
   model = "claude-opus-4-8",
-  max_tokens = 40000,
+  max_tokens = 16000,
+  thinking = {
+    enabled = true,
+    budget_tokens = 4096, -- only used for models on manual thinking (e.g. Haiku)
+    effort = "medium",    -- low|medium|high|max — used for adaptive-thinking models (Opus/Sonnet/Fable)
+  },
   timeout = 120,
   store_dir = vim.fn.stdpath("data") .. "/claude_batches",
   history_file = vim.fn.stdpath("data") .. "/claude_batches/history.md",
@@ -24,6 +29,15 @@ local config = {
 }
 
 local cached_key
+
+-- Модели, принимающие ТОЛЬКО adaptive thinking (thinking={type="adaptive"}).
+-- Передача {type="enabled", budget_tokens=N} на них вернёт 400 Bad Request.
+local ADAPTIVE_THINKING_MODELS = {
+  ["claude-opus-4-8"] = true,
+  ["claude-sonnet-5"] = true,
+  ["claude-fable-5"] = true,
+  ["claude-mythos-5"] = true,
+}
 
 local function api_base()
   if config.provider == "proxy" then
@@ -209,17 +223,30 @@ local function open_result_win(lines, label)
   end, { buffer = buf, silent = true, desc = "Yank result" })
 end
 
+local function apply_thinking(params)
+  if not (config.thinking and config.thinking.enabled) then return end
+  if ADAPTIVE_THINKING_MODELS[config.model] then
+    params.thinking = { type = "adaptive", display = "summarized" }
+    params.output_config = { effort = config.thinking.effort or "medium" }
+  else
+    params.thinking = { type = "enabled", budget_tokens = config.thinking.budget_tokens }
+  end
+end
+
 function M.submit(prompt, label)
+  local params = {
+    model = config.model,
+    max_tokens = config.max_tokens,
+    system = config.system_prompt,
+    messages = { { role = "user", content = prompt } },
+  }
+  apply_thinking(params)
+
   local body = vim.json.encode({
     requests = {
       {
         custom_id = "req-1",
-        params = {
-          model = config.model,
-          max_tokens = config.max_tokens,
-          system = config.system_prompt,
-          messages = { { role = "user", content = prompt } },
-        },
+        params = params,
       },
     },
   })
@@ -227,7 +254,7 @@ function M.submit(prompt, label)
     function(raw)
       local res = decode(raw)
       if not res or res.type == "error" or not res.id then
-        vim.notify("Ошибка отправки батча: " .. raw:sub(1, 300), vim.log.levels.ERROR)
+        vim.notify("Ошибка отправки батча: " .. raw:sub(1, 700), vim.log.levels.ERROR)
         return
       end
       save_batch({
@@ -253,11 +280,13 @@ local function fetch_results(meta, results_url)
       local obj = decode(line)
       if obj and obj.result then
         if obj.result.type == "succeeded" and obj.result.message then
-          for _, block in ipairs(obj.result.message.content or {}) do
-            if block.type == "text" and block.text then
-              vim.list_extend(lines, vim.split(block.text, "\n"))
-            end
+        for _, block in ipairs(obj.result.message.content or {}) do
+          if block.type == "thinking" and block.thinking then
+            vim.list_extend(lines, vim.split("**[thinking]**\n" .. block.thinking .. "\n", "\n"))
+            elseif block.type == "text" and block.text then
+            vim.list_extend(lines, vim.split(block.text, "\n"))
           end
+        end
         elseif obj.result.error then
           vim.list_extend(lines, vim.split("Ошибка: " .. vim.inspect(obj.result.error), "\n"))
         end
@@ -411,13 +440,28 @@ function M.set_model(model_name)
     haiku = "claude-haiku-4-5-20251001",
     opus = "claude-opus-4-8",
     fable = "claude-fable-5",
-    sonnet = "claude-sonnet-4-6",
+    sonnet = "claude-sonnet-5",
   }
 
   local target_model = models[model_name] or model_name
   config.model = target_model
   vim.notify("Переключено на модель: " .. target_model, vim.log.levels.INFO)
 end
+
+function M.toggle_thinking()
+  config.thinking.enabled = not config.thinking.enabled
+  vim.notify("Thinking: " .. (config.thinking.enabled and "on" or "off"))
+end
+
+-- Глубина рассуждений для моделей с adaptive thinking (Opus/Sonnet/Fable).
+-- На Haiku не действует — там используется фиксированный budget_tokens.
+function M.set_effort(level)
+  local levels = { quick = "low", normal = "medium", deep = "high", max = "max" }
+  local target = levels[level] or level
+  config.thinking.effort = target
+  vim.notify("Effort: " .. target, vim.log.levels.INFO)
+end
+
 
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
@@ -450,8 +494,23 @@ function M.setup(opts)
   vim.keymap.set("n", "<leader>bmh", function() M.set_model("haiku") end, { desc = "Claude: Switch to Haiku" })
   vim.keymap.set("n", "<leader>bmo", function() M.set_model("opus") end, { desc = "Claude: Switch to Opus" })
   vim.keymap.set("n", "<leader>bms", function() M.set_model("sonnet") end, { desc = "Claude: Switch to Sonnet" })
-  vim.keymap.set("n", "<leader>bmo", function() M.set_model("opus") end, { desc = "Claude: Switch to Opus" })
   vim.keymap.set("n", "<leader>bmf", function() M.set_model("fable") end, { desc = "Claude: Switch to Fable" })
+
+  vim.api.nvim_create_user_command("ClaudeThinking", M.toggle_thinking, {})
+  vim.keymap.set("n", "<leader>bt", M.toggle_thinking, { desc = "Claude: toggle thinking" })
+
+  -- Команда и хоткеи для глубины рассуждений (effort)
+  vim.api.nvim_create_user_command("ClaudeEffort", function(o)
+    M.set_effort(o.args)
+  end, {
+    nargs = 1,
+    complete = function() return { "quick", "normal", "deep", "max" } end,
+  })
+  vim.keymap.set("n", "<leader>be1", function() M.set_effort("quick") end, { desc = "Claude: effort quick" })
+  vim.keymap.set("n", "<leader>be2", function() M.set_effort("normal") end, { desc = "Claude: effort normal" })
+  vim.keymap.set("n", "<leader>be3", function() M.set_effort("deep") end, { desc = "Claude: effort deep" })
+  vim.keymap.set("n", "<leader>be4", function() M.set_effort("max") end, { desc = "Claude: effort max" })
+
 end
 
 return M
