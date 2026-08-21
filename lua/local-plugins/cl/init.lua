@@ -6,16 +6,17 @@ local config = {
   base_url = "https://api.anthropic.com",
   proxy_url = "https://withered-glade-1108.lexa042987.workers.dev",
   proxy_key = nil,
-  model = "claude-opus-4-8",
+  model = "claude-opus-5",
   max_tokens = 16000,
   thinking = {
     enabled = true,
     budget_tokens = 4096, -- only used for models on manual thinking (e.g. Haiku)
-    effort = "medium",    -- low|medium|high|max — used for adaptive-thinking models (Opus/Sonnet/Fable)
+    effort = "high",    -- low|medium|high|max — used for adaptive-thinking models (Opus/Sonnet/Fable)
   },
   timeout = 120,
   store_dir = vim.fn.stdpath("data") .. "/claude_batches",
   history_file = vim.fn.stdpath("data") .. "/claude_batches/history.md",
+  task_file = vim.fn.stdpath("data") .. "/claude_batches/task.md",
   system_prompt = table.concat({
     "Answer directly: no preamble, no filler, no closing summaries.",
     "Simple question -> 1-2 sentences. Complex -> tight structure.",
@@ -33,7 +34,7 @@ local cached_key
 -- Модели, принимающие ТОЛЬКО adaptive thinking (thinking={type="adaptive"}).
 -- Передача {type="enabled", budget_tokens=N} на них вернёт 400 Bad Request.
 local ADAPTIVE_THINKING_MODELS = {
-  ["claude-opus-4-8"] = true,
+  ["claude-opus-5"] = true,
   ["claude-sonnet-5"] = true,
   ["claude-fable-5"] = true,
   ["claude-mythos-5"] = true,
@@ -368,6 +369,14 @@ function M.history()
   vim.cmd("normal! G")
 end
 
+function M.task()
+  if vim.fn.filereadable(config.task_file) == 0 then
+    vim.notify("Задачи нет")
+    return
+  end
+  vim.cmd("edit " .. vim.fn.fnameescape(config.task_file))
+end
+
 local function get_visual_selection()
   local s = vim.fn.getpos("'<")
   local e = vim.fn.getpos("'>")
@@ -438,7 +447,7 @@ end
 function M.set_model(model_name)
   local models = {
     haiku = "claude-haiku-4-5-20251001",
-    opus = "claude-opus-4-8",
+    opus = "claude-opus-5",
     fable = "claude-fable-5",
     sonnet = "claude-sonnet-5",
   }
@@ -474,6 +483,7 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("ClaudeBatchPoll", M.poll, {})
   vim.api.nvim_create_user_command("ClaudeBatchList", M.list, {})
   vim.api.nvim_create_user_command("ClaudeBatchHistory", M.history, {})
+  vim.api.nvim_create_user_command("ClaudeBatchTask", M.task, {})
 
   -- Команда для динамической смены модели на лету
   vim.api.nvim_create_user_command("ClaudeModel", function(o)
@@ -489,6 +499,7 @@ function M.setup(opts)
   vim.keymap.set("n", "<leader>bp", "<cmd>ClaudeBatchPoll<cr>", { desc = "Claude batch poll" })
   vim.keymap.set("n", "<leader>bl", "<cmd>ClaudeBatchList<cr>", { desc = "Claude batch list" })
   vim.keymap.set("n", "<leader>bh", "<cmd>ClaudeBatchHistory<cr>", { desc = "Claude batch history" })
+  vim.keymap.set("n", "<leader>bc", "<cmd>ClaudeBatchTask<cr>", { desc = "Claude batch task" })
 
   -- Хоткеи для мгновенной смены модели на лету
   vim.keymap.set("n", "<leader>bmh", function() M.set_model("haiku") end, { desc = "Claude: Switch to Haiku" })
