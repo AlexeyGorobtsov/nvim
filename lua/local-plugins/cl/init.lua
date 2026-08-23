@@ -7,11 +7,11 @@ local config = {
   proxy_url = "https://withered-glade-1108.lexa042987.workers.dev",
   proxy_key = nil,
   model = "claude-opus-5",
-  max_tokens = 16000,
+  max_tokens = 128000,
   thinking = {
     enabled = true,
     budget_tokens = 4096, -- only used for models on manual thinking (e.g. Haiku)
-    effort = "high",    -- low|medium|high|max — used for adaptive-thinking models (Opus/Sonnet/Fable)
+    effort = "medium",    -- low|medium|high|max — used for adaptive-thinking models (Opus/Sonnet/Fable)
   },
   timeout = 120,
   store_dir = vim.fn.stdpath("data") .. "/claude_batches",
