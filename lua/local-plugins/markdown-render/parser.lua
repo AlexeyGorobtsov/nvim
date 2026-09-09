@@ -175,9 +175,10 @@ function M.parse(lines, width)
         local li, sp = match(pre, "^(%s*)[%-%*%+](%s+)")
         if li then
           local level = math.floor(#li / 2)
-          push(out, row, from + #li, from + #li + 1 + #sp, { conceal = "" })
-          local label = rep(" ", from) .. BULLETS[level % 4 + 1]
-          overlay(out, row, strwidth(label), label, "MdBullet")
+          push(out, row, from + #li, from + #li + 1, {
+            conceal = BULLETS[level % 4 + 1],
+            hl_group = "MdBullet",
+          })
           local off = from + #li + 1 + #sp
           local box = match(pre, "^%[([ x])%]%s", #li + 2 + #sp)
           if box then
@@ -187,11 +188,9 @@ function M.parse(lines, width)
           end
           inline(out, row, line, from)
         else
-          local li2, num, dot, sp2 = match(pre, "^(%s*)(%d+)(%.)(%s+)")
+          local li2, num, dot = match(pre, "^(%s*)(%d+)(%.)%s")
           if li2 then
-            push(out, row, from + #li2, from + #li2 + #num + #dot + #sp2, { conceal = "" })
-            local label = rep(" ", from) .. num .. dot
-            overlay(out, row, strwidth(label), label, "MdNumber")
+            push(out, row, from + #li2, from + #li2 + #num + #dot, { hl_group = "MdNumber" })
           end
           inline(out, row, line, from)
         end

@@ -36,7 +36,7 @@ local cached_key
 local ADAPTIVE_THINKING_MODELS = {
   ["claude-opus-5"] = true,
   ["claude-sonnet-5"] = true,
-  ["claude-fable-5"] = true,
+  ["claude-fable-5-1"] = true,
   ["claude-mythos-5"] = true,
 }
 
@@ -448,7 +448,7 @@ function M.set_model(model_name)
   local models = {
     haiku = "claude-haiku-4-5-20251001",
     opus = "claude-opus-5",
-    fable = "claude-fable-5",
+    fable = "claude-fable-5-1",
     sonnet = "claude-sonnet-5",
   }
 
