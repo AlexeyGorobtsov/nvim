@@ -6,7 +6,7 @@ local config = {
   base_url = "https://api.anthropic.com",
   proxy_url = "https://withered-glade-1108.lexa042987.workers.dev",
   proxy_key = nil,
-  model = "claude-opus-5",
+  model = "claude-opus-5-5",
   max_tokens = 128000,
   thinking = {
     enabled = true,
@@ -34,7 +34,7 @@ local cached_key
 -- Модели, принимающие ТОЛЬКО adaptive thinking (thinking={type="adaptive"}).
 -- Передача {type="enabled", budget_tokens=N} на них вернёт 400 Bad Request.
 local ADAPTIVE_THINKING_MODELS = {
-  ["claude-opus-5"] = true,
+  ["claude-opus-5-5"] = true,
   ["claude-sonnet-5"] = true,
   ["claude-fable-5-1"] = true,
   ["claude-mythos-5"] = true,
@@ -447,7 +447,7 @@ end
 function M.set_model(model_name)
   local models = {
     haiku = "claude-haiku-4-5-20251001",
-    opus = "claude-opus-5",
+    opus = "claude-opus-5-5",
     fable = "claude-fable-5-1",
     sonnet = "claude-sonnet-5",
   }
