@@ -23,7 +23,7 @@ return {
         "*.obj",
       }
 
-      vim.opt.suffixesadd = { ".js", ".jsx", ".ts", ".tsx", ".json" }
+      vim.opt.suffixesadd = { ".js", ".jsx", ".ts", ".tsx", ".json", ".py" }
       -- ==========================================
       -- АВТОДОПОЛНЕНИЕ ДЛЯ macOS
       -- ==========================================
@@ -82,35 +82,10 @@ return {
           if before_cursor:match("from%s+['\"]") or before_cursor:match("import.*['\"]") then
             return "<C-x><C-o>" -- LSP для импортов
           else
-            return "<C-n>" -- обычное
+            return "<C-n>"      -- обычное
           end
         end
       end, { expr = true, desc = "Smart completion" })
-      -- Автодополнение по <Tab>
-      vim.keymap.set("i", "<Tab>", function()
-        if vim.fn.pumvisible() == 1 then
-          return "<C-n>"
-        else
-          return "<Tab>"
-        end
-      end, { expr = true })
-
-      vim.keymap.set("i", "<S-Tab>", function()
-        if vim.fn.pumvisible() == 1 then
-          return "<C-p>"
-        else
-          return "<S-Tab>"
-        end
-      end, { expr = true })
-
-      -- Подтверждение через Enter
-      vim.keymap.set("i", "<CR>", function()
-        if vim.fn.pumvisible() == 1 then
-          return "<C-y>"
-        else
-          return "<CR>"
-        end
-      end, { expr = true })
 
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities.textDocument.completion.completionItem.snippetSupport = true
@@ -151,7 +126,7 @@ return {
               includePackageJsonAutoImports = "on",
               importModuleSpecifierPreference = "relative", -- ← ВАЖНО!
               importModuleSpecifierEnding = "minimal",
-              quotePreference = "single",  -- использовать одинарные кавычки
+              quotePreference = "single",                   -- использовать одинарные кавычки
               includeInlayFunctionParameterTypeHints = true,
             },
           },
@@ -231,6 +206,37 @@ return {
           },
         },
       }
+      -- Python: типы, автодополнение, навигация
+      vim.lsp.config.pyright = {
+        cmd = { "pyright-langserver", "--stdio" },
+        filetypes = { "python" },
+        root_markers = {
+          "pyrightconfig.json",
+          "pyproject.toml",
+          "setup.py",
+          "setup.cfg",
+          "requirements.txt",
+          "Pipfile",
+          ".git",
+        },
+        settings = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              useLibraryCodeForTypes = true,
+              diagnosticMode = "openFilesOnly",
+              typeCheckingMode = "basic", -- "off" | "basic" | "strict"
+            },
+          },
+        },
+      }
+
+      -- Python: линтер + форматтер
+      vim.lsp.config.ruff = {
+        cmd = { "ruff", "server" },
+        filetypes = { "python" },
+        root_markers = { "pyproject.toml", "ruff.toml", ".ruff.toml", ".git" },
+      }
 
       -- Включить серверы
       vim.lsp.enable({
@@ -240,6 +246,8 @@ return {
         "cssls",
         "jsonls",
         "lua_ls",
+        "pyright",
+        "ruff",
       })
 
       -- Горячие клавиши при подключении LSP
@@ -248,6 +256,9 @@ return {
         callback = function(args)
           local bufnr = args.buf
           local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if client and client.name == "ruff" then
+            client.server_capabilities.hoverProvider = false
+          end
 
           local function map(mode, lhs, rhs, desc)
             vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
@@ -285,6 +296,13 @@ return {
               },
             })
           end, "Organize All Imports")
+
+          map("n", "<leader>op", function()
+            vim.lsp.buf.code_action({
+              apply = true,
+              context = { only = { "source.organizeImports.ruff" }, diagnostics = {} },
+            })
+          end, "Python: Organize Imports (ruff)")
 
 
           -- Навигация
