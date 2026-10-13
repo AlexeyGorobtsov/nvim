@@ -304,6 +304,37 @@ return {
             })
           end, "Python: Organize Imports (ruff)")
 
+          -- Python: всё одной кнопкой (fix + imports + format), шаги строго по очереди
+          if client and client.name == "ruff" then
+            local function ruff_action(kind)
+              local params = {
+                textDocument = vim.lsp.util.make_text_document_params(bufnr),
+                range = {
+                  start = { line = 0, character = 0 },
+                  ["end"] = { line = vim.api.nvim_buf_line_count(bufnr), character = 0 },
+                },
+                context = { only = { kind }, diagnostics = {} },
+              }
+              local res = client:request_sync("textDocument/codeAction", params, 2000, bufnr)
+              for _, action in ipairs(res and res.result or {}) do
+                -- ruff может отдать экшен без edit — тогда его нужно "resolve"
+                if not action.edit then
+                  local resolved = client:request_sync("codeAction/resolve", action, 2000, bufnr)
+                  action = resolved and resolved.result or action
+                end
+                if action.edit then
+                  vim.lsp.util.apply_workspace_edit(action.edit, client.offset_encoding)
+                end
+              end
+            end
+
+            map("n", "<leader>F", function()
+              ruff_action("source.fixAll.ruff")
+              ruff_action("source.organizeImports.ruff")
+              vim.lsp.buf.format({ bufnr = bufnr, name = "ruff", async = false })
+            end, "Python: Fix + Imports + Format")
+          end
+
 
           -- Навигация
           map("n", "gd", vim.lsp.buf.definition, "Go to Definition")
@@ -348,6 +379,7 @@ return {
         <leader>rn  - переименовать
         <leader>ca  - быстрые исправления
         <leader>f   - форматировать код
+        <leader>F   - Python: fix + импорты + формат (ruff)
 
       🔍 ДИАГНОСТИКА:
         [d       - предыдущая ошибка
