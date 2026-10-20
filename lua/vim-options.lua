@@ -46,15 +46,30 @@ vim.opt.imsearch = 0
 vim.opt.statusline = "%f %m %= %k %l:%c"
 vim.keymap.set("i", "jj", "<C-^>", { desc = "Toggle Russian layout" })
 
--- Keymaps for window navigation
-vim.keymap.set("n", "<c-k>", ":wincmd k<CR>", { desc = "Move to window above" })
-vim.keymap.set("n", "<c-j>", ":wincmd j<CR>", { desc = "Move to window below" })
-vim.keymap.set("n", "<c-h>", ":wincmd h<CR>", { desc = "Move to window left" })
-vim.keymap.set("n", "<c-l>", ":wincmd l<CR>", { desc = "Move to window right" })
+-- Новые сплиты открываются справа и снизу (а не слева/сверху)
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+
+-- Keymaps for window navigation (работают и из терминала)
+vim.keymap.set({ "n", "t" }, "<C-h>", "<cmd>wincmd h<CR>", { desc = "Move to window left" })
+vim.keymap.set({ "n", "t" }, "<C-j>", "<cmd>wincmd j<CR>", { desc = "Move to window below" })
+vim.keymap.set({ "n", "t" }, "<C-k>", "<cmd>wincmd k<CR>", { desc = "Move to window above" })
+vim.keymap.set({ "n", "t" }, "<C-l>", "<cmd>wincmd l<CR>", { desc = "Move to window right" })
+
+-- Сплиты и размеры окон
+vim.keymap.set("n", "<leader>v", "<cmd>vsplit<CR>", { desc = "Vertical split" })
+vim.keymap.set("n", "<leader>s", "<cmd>split<CR>", { desc = "Horizontal split" })
+vim.keymap.set("n", "<leader>=", "<C-w>=", { desc = "Equalize windows" })
+-- Shift+стрелки, т.к. Ctrl+стрелки в macOS перехватывает система (Spaces / Mission Control)
+vim.keymap.set({ "n", "t" }, "<S-Up>", "<cmd>resize +2<CR>", { desc = "Increase window height" })
+vim.keymap.set({ "n", "t" }, "<S-Down>", "<cmd>resize -2<CR>", { desc = "Decrease window height" })
+vim.keymap.set({ "n", "t" }, "<S-Left>", "<cmd>vertical resize -4<CR>", { desc = "Decrease window width" })
+vim.keymap.set({ "n", "t" }, "<S-Right>", "<cmd>vertical resize +4<CR>", { desc = "Increase window width" })
 
 -- Custom keymaps
 vim.keymap.set("n", "<leader>h", ":nohlsearch<CR>", { desc = "Clear search highlighting" })
 vim.keymap.set("n", "<leader>tn", ":tabnext<CR>", { desc = "Go to next tab" })
+vim.keymap.set("n", "<leader>tp", ":tabprevious<CR>", { desc = "Go to previous tab" })
 vim.keymap.set("n", "<leader>pv", ":Vex<CR>", { noremap = true, desc = "Open vertical explorer" })
 
 -- Paste from yank register (register 0) instead of default register

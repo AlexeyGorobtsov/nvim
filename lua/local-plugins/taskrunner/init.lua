@@ -8,6 +8,59 @@ M.last_terminal = nil
 -- Основные функции
 -- ══════════════════════════════════════════════════════════
 
+M.height = 15
+M.width = 0.4             -- доля ширины экрана для терминала справа
+M.position = "bottom"     -- "bottom" | "right"
+
+-- Найти окно с терминалом в текущей вкладке
+M._find_win = function()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].buftype == "terminal" then
+      return win
+    end
+  end
+end
+
+M._width_cols = function()
+  return math.floor(vim.o.columns * M.width)
+end
+
+-- Перейти в окно терминала или открыть сплит (снизу на всю ширину / справа на всю высоту)
+M._open_win = function()
+  local win = M._find_win()
+  if win then
+    vim.api.nvim_set_current_win(win)
+  elseif M.position == "right" then
+    vim.cmd("botright " .. M._width_cols() .. "vsplit")
+  else
+    vim.cmd("botright " .. M.height .. "split")
+  end
+end
+
+-- Переключить расположение терминала: снизу <-> справа
+M.toggle_position = function()
+  M.position = M.position == "right" and "bottom" or "right"
+
+  local win = M._find_win()
+  if win then
+    local cur = vim.api.nvim_get_current_win()
+    vim.api.nvim_set_current_win(win)
+    if M.position == "right" then
+      vim.cmd("wincmd L")
+      vim.cmd("vertical resize " .. M._width_cols())
+    else
+      vim.cmd("wincmd J")
+      vim.cmd("resize " .. M.height)
+    end
+    if vim.api.nvim_win_is_valid(cur) then
+      vim.api.nvim_set_current_win(cur)
+    end
+  end
+
+  vim.notify("Terminal position: " .. M.position, vim.log.levels.INFO)
+end
+
 -- Создать новый терминал
 M.create = function(opts)
   opts = opts or {}
@@ -15,10 +68,12 @@ M.create = function(opts)
   local name = opts.name or ("term-" .. (#M.terminals + 1))
   local cmd = opts.cmd or nil
 
-  -- Запомнить текущий буфер
-  local prev_buf = vim.api.nvim_get_current_buf()
+  local prev_win = vim.api.nvim_get_current_win()
+  local had_win = M._find_win() ~= nil
 
-  -- Создать терминал
+  -- Открыть терминал в нижнем сплите (новый буфер, старый терминал остаётся в фоне)
+  M._open_win()
+  vim.cmd("enew")
   if cmd then
     vim.cmd.terminal(cmd)
   else
@@ -53,7 +108,14 @@ M.create = function(opts)
 
   -- Скрыть если нужно
   if opts.hide then
-    vim.api.nvim_set_current_buf(prev_buf)
+    if had_win then
+      vim.cmd("buffer #")
+    else
+      vim.api.nvim_win_close(0, false)
+    end
+    if vim.api.nvim_win_is_valid(prev_win) then
+      vim.api.nvim_set_current_win(prev_win)
+    end
   else
     -- Войти в insert mode
     vim.cmd("startinsert")
@@ -150,21 +212,27 @@ M.select = function(index)
   end
 
   M.last_terminal = index
+  M._open_win()
   vim.api.nvim_set_current_buf(term.buf)
   vim.cmd("startinsert")
 end
 
--- Переключиться на последний терминал
+-- Показать/скрыть нижнее окно терминала
 M.toggle = function()
-  local current_buf = vim.api.nvim_get_current_buf()
+  M._cleanup()
+  local win = M._find_win()
 
-  -- Если мы в терминале — вернуться к предыдущему буферу
-  if vim.bo[current_buf].buftype == "terminal" then
-    vim.cmd("buffer #")
+  -- Терминал виден — скрыть окно (процесс продолжает работать)
+  if win then
+    if #vim.api.nvim_tabpage_list_wins(0) > 1 then
+      vim.api.nvim_win_close(win, false)
+    else
+      vim.cmd("buffer #")
+    end
     return
   end
 
-  -- Если есть последний терминал — перейти к нему
+  -- Если есть последний терминал — открыть его
   if M.last_terminal and M.terminals[M.last_terminal] then
     M.select(M.last_terminal)
     return
@@ -430,7 +498,12 @@ M.help = function()
     "",
     "  GLOBAL KEYMAPS",
     "  ──────────────────────────────────────",
-    "  <C-\\>         Toggle last terminal",
+    "  <C-\\>         Toggle terminal (bottom split)",
+    "  <leader>tt    Toggle terminal",
+    "  <C-q>         Hide terminal (in terminal)",
+    "  <C-h/j/k/l>   Move between windows",
+    "  <S-arrows>    Resize window",
+    "  <leader>tv    Terminal: bottom <-> right",
     "  <leader>ta    Add current terminal",
     "  <leader>tl    Open terminal menu",
     "  <leader>tc    Create new terminal",
@@ -469,9 +542,9 @@ M.help = function()
   local highlights = {
     { line = 2,  hl = "Title" },
     { line = 5,  hl = "Function" },
-    { line = 13, hl = "Function" },
-    { line = 20, hl = "Function" },
-    { line = 32, hl = "Function" },
+    { line = 18, hl = "Function" },
+    { line = 25, hl = "Function" },
+    { line = 37, hl = "Function" },
   }
 
   for _, h in ipairs(highlights) do
@@ -523,6 +596,10 @@ M.setup = function(opts)
     M.tasks = opts.tasks
   end
 
+  M.position = opts.position or M.position
+  M.height = opts.height or M.height
+  M.width = opts.width or M.width
+
   -- Основные кеймапы
   vim.keymap.set("n", prefix .. "l", M.menu, { desc = "Terminal menu" })
   vim.keymap.set("n", prefix .. "a", M.add, { desc = "Add terminal to list" })
@@ -531,6 +608,7 @@ M.setup = function(opts)
   end, { desc = "Create terminal" })
   vim.keymap.set("n", prefix .. "x", M.close_all, { desc = "Close all terminals" })
   vim.keymap.set("n", prefix .. "?", M.help, { desc = "Terminal help" })
+  vim.keymap.set("n", prefix .. "v", M.toggle_position, { desc = "Terminal: bottom <-> right" })
 
   -- vim.keymap.set("n", "<C-\\>", M.toggle, { desc = "Toggle terminal" })
   -- vim.keymap.set("t", "<C-\\>", "<C-\\><C-n><cmd>lua require('local-plugins.taskrunner').toggle()<CR>", { desc = "Toggle terminal" })
@@ -540,6 +618,11 @@ M.setup = function(opts)
     vim.cmd("stopinsert")
     M.toggle()
   end, { desc = "Toggle terminal" })
+  vim.keymap.set("n", prefix .. "t", M.toggle, { desc = "Toggle terminal" })
+  vim.keymap.set("t", "<C-q>", function()
+    vim.cmd("stopinsert")
+    M.toggle()
+  end, { desc = "Hide terminal" })
  -- Выход в normal mode (для копирования)
   vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
   -- Быстрый доступ к терминалам 1-4

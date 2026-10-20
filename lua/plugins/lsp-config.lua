@@ -342,7 +342,9 @@ return {
           map("n", "gr", vim.lsp.buf.references, "References")
           map("n", "gi", vim.lsp.buf.implementation, "Implementation")
           map("n", "K", vim.lsp.buf.hover, "Hover")
-          map("n", "<C-k>", vim.lsp.buf.signature_help, "Signature Help")
+          -- В normal-режиме <C-k> занят навигацией по окнам, поэтому подсказка — в insert
+          map("i", "<C-k>", vim.lsp.buf.signature_help, "Signature Help")
+          map("n", "gK", vim.lsp.buf.signature_help, "Signature Help")
 
           -- Действия
           map("n", "<leader>rn", vim.lsp.buf.rename, "Rename")
@@ -373,7 +375,7 @@ return {
         gr       - показать все использования
         gi       - перейти к реализации
         K        - показать документацию
-        Ctrl+k   - подсказка параметров
+        gK       - подсказка параметров (Ctrl+k в insert)
 
       ⚡ ДЕЙСТВИЯ:
         <leader>rn  - переименовать
