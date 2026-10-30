@@ -142,7 +142,7 @@ M.help = function()
     "  <leader>a     Add current file",
     "  <leader>A     Remove current file",
     "  <leader>l     Open menu",
-    "  <leader>c     Clear all files",
+    "  <leader>C     Clear all files",
     "",
     "  MENU KEYMAPS", -- 13 (index 12)
     "  ──────────────────────────────────────",
@@ -225,8 +225,9 @@ M.setup = function(opts)
   vim.keymap.set("n", prefix .. "a", M.add, { desc = "Add file to arglist" })
   vim.keymap.set("n", prefix .. "A", M.remove, { desc = "Remove file from arglist" })
   vim.keymap.set("n", prefix .. "l", M.menu, { desc = "Open arglist menu" })
-  vim.keymap.set("n", prefix .. "c", M.clear, { desc = "Clear arglist" })
-  vim.keymap.set("n", prefix .. "?", M.help, { desc = "Show harpoon help" })
+  -- "c" и "?" заняты LSP (<leader>ca, <leader>?), поэтому заглавные
+  vim.keymap.set("n", prefix .. "C", M.clear, { desc = "Clear arglist" })
+  vim.keymap.set("n", prefix .. "H", M.help, { desc = "Show harpoon help" })
 end
 
 return M

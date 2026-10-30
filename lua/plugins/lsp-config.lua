@@ -349,7 +349,8 @@ return {
           -- Действия
           map("n", "<leader>rn", vim.lsp.buf.rename, "Rename")
           map({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, "Code Action")
-          map("n", "<leader>f", function()
+          -- <leader>f — префикс поиска (<leader>ff, <leader>fg...), поэтому формат на <leader>cf (рядом с <leader>ca)
+          map("n", "<leader>cf", function()
             vim.lsp.buf.format({ async = true })
           end, "Format")
 
@@ -380,7 +381,7 @@ return {
       ⚡ ДЕЙСТВИЯ:
         <leader>rn  - переименовать
         <leader>ca  - быстрые исправления
-        <leader>f   - форматировать код
+        <leader>cf  - форматировать код
         <leader>F   - Python: fix + импорты + формат (ruff)
 
       🔍 ДИАГНОСТИКА:

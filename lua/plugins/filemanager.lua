@@ -37,5 +37,9 @@ return {
     vim.keymap.set('n', '<C-S-n>', '<cmd>FMHere<CR>', {
       desc = 'Toggle File Explorer (Current File)'
     })
+    -- <C-S-n> многие терминалы не отличают от <C-n>, поэтому дублируем
+    vim.keymap.set('n', '<leader>n', '<cmd>FMHere<CR>', {
+      desc = 'Toggle File Explorer (Current File)'
+    })
   end,
 }

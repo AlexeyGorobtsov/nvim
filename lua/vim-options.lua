@@ -33,6 +33,13 @@ vim.env.COLORTERM = "truecolor"
 vim.opt.spell = true                     -- Enable spell checking
 vim.opt.spelllang = { "en_us", "ru_ru" } -- Set spell check languages to English and Russian
 
+-- Disable spell checking in terminal buffers (it highlights hashes, logs, etc.)
+vim.api.nvim_create_autocmd("TermOpen", {
+  callback = function()
+    vim.opt_local.spell = false
+  end,
+})
+
 
 -- Устанавливаем встроенную русскую раскладку (для Windows/Linux используйте russian-jcukenwin)
 -- Для macOS можно использовать russian-jcukenmac
