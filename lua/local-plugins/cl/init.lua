@@ -35,8 +35,8 @@ local cached_key
 -- Передача {type="enabled", budget_tokens=N} на них вернёт 400 Bad Request.
 local ADAPTIVE_THINKING_MODELS = {
   ["claude-opus-5-5"] = true,
-  ["claude-sonnet-5"] = true,
-  ["claude-fable-5-1"] = true,
+  ["claude-sonnet-5-5"] = true,
+  ["claude-fable-5-2"] = true,
   ["claude-mythos-5"] = true,
 }
 
@@ -448,8 +448,8 @@ function M.set_model(model_name)
   local models = {
     haiku = "claude-haiku-4-5-20251001",
     opus = "claude-opus-5-5",
-    fable = "claude-fable-5-1",
-    sonnet = "claude-sonnet-5",
+    fable = "claude-fable-5-2",
+    sonnet = "claude-sonnet-5-5",
   }
 
   local target_model = models[model_name] or model_name
